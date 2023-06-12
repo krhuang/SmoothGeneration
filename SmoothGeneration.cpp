@@ -10,14 +10,24 @@ class Smooth_Polygon{
 		vector<pair<int, int>> coordinates; //vertex coordinates
 };
 
+//Triangulations, usually given by plantri in text form. 
 class Triangulation{
-
+	public:
+		int number_vertices;
+		vector<pair<int, int>> edges;  
 };
 
+//Smooth 3-Polytopes
 class Smooth_3Polytope{
 
 };
 
+void unimodular3simplexexample(){
+	Triangulation K_4; 
+	K_4.number_vertices = 4;
+	cout << K_4.number_vertices << endl;
+	K_4.edges = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}}; 
+}
 
 int main(){
 	/*
@@ -36,8 +46,6 @@ int main(){
 		Example of the unimodular 3-simplex. It has vertices (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
-		
 	*/
-	cout << "Hello World!";
-	return 0;	
+	unimodular3simplexexample();
 }
