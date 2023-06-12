@@ -32,7 +32,12 @@ int main(){
 					[STOP CONDITION: Check if number of vertices + edge lengths - #edges + #interior lattice opints is >= N]
 				Try to close up a 3D Polytope using the triangulation
 	*/
-	// Example of the unimodular 3-simplex. It has vertices (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)
+	/* 
+		Example of the unimodular 3-simplex. It has vertices (0, 0, 0), (1, 0, 0), (0, 1, 0), (0, 0, 1)
+		Its triangulation is K_4
+		Its smooth polygons are all the unimodular 2-simplex
+		
+	*/
 	cout << "Hello World!";
 	return 0;	
 }
