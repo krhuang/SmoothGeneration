@@ -1,32 +1,109 @@
 #include <iostream>
 #include <vector>
 using namespace std;
+int max_lattice_points = 20;
+int adjacency_graph[4][4];
 
 class Smooth_Polygon{
 	public:
 		int number_vertices;
 		int number_interior_lattice_points;
-		vector<int> edge_lengths; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format
+		vector<int> edge_lengths; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
 		vector<pair<int, int>> coordinates; //vertex coordinates
+	void print(){
+		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << endl;
+		cout << "Its vertices are " << endl;
+		for(int i=0; i < number_vertices; i ++){
+			cout << coordinates[i].first << ", " << coordinates[i].second << endl;
+		}
+		cout << "and it has clockwise edge lengths ";
+		for(int i=0; i < number_vertices; i++){
+			if(i < number_vertices - 1){
+				cout << edge_lengths[i] << ", "; 
+			}
+			else{
+				cout << edge_lengths[i] << "." << endl;
+			}
+		}
+	}
 };
+Smooth_Polygon Smooth_Polygon_Database[1];
 
 //Triangulations, usually given by plantri in text form. 
+//Each triangulation has [number_vertices] vertices and its edges are given clockwise
 class Triangulation{
 	public:
 		int number_vertices;
-		vector<pair<int, int>> edges;  
+		vector<vector<int>> adjacencies;
+		vector<vector<int>> edge_weights;
+	int degree_of_vertex(int vertex_number){
+		return adjacencies[vertex_number].size();
+	}
+	void print(){
+		cout << "A Triangulation with " << number_vertices << " vertices." << endl;
+		cout << "Its Adjacency Graph is given by the 0-1s matrix" << endl;
+		for(int row = 0; row < number_vertices; row ++){
+			for(int col = 0; col < number_vertices; col ++){
+				cout << adjacency_graph[row][col];
+			}
+			cout << endl;
+		}
+	}
+};
+
+class SimpleGraph{
+	public:
+		int number_vertices;
+		vector<vector<int>> adjacencies; //for each vertex, denotes the vertices to which it is adjacent? 
+	void add_edge(int source, int target){
+		//adds an edge to the Simple Graph
+	}
 };
 
 //Smooth 3-Polytopes
-class Smooth_3Polytope{
+class Smooth3Polytope{
+	public:	
+		int number_vertices;
+		vector<vector<int>> coordinates;
 
+	void construct_from_triangulation(Triangulation input_triangulation){
+
+	}
 };
 
 void unimodular3simplexexample(){
+	//Initialization
 	Triangulation K_4; 
 	K_4.number_vertices = 4;
-	cout << K_4.number_vertices << endl;
-	K_4.edges = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}}; 
+	K_4.adjacencies = {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}};
+	cout << K_4.degree_of_vertex(3) << endl;
+	/*for(int row = 0; row < K_4.number_vertices; row ++){
+		for(int col = 0; col < K_4.number_vertices; col ++){
+			if(row != col){
+				K_4.adjacency_graph[row][col] = 1;
+			}
+			else{
+				K_4.adjacency_graph[row][col] = 0;
+			}
+		}
+	}*/
+	//K_4.print();
+	K_4.edge_weights = K_4.adjacencies;
+	for(int i=0; i<K_4.number_vertices; i++){
+		for(int j = 0; j < K_4.adjacencies[i].size(); j++){
+			K_4.edge_weights[i][j] = 1;
+		}
+	}
+
+	Smooth_Polygon Simplex_2;
+	Simplex_2.number_vertices = 3;
+	Simplex_2.number_interior_lattice_points = 0;
+	Simplex_2.edge_lengths = {1, 1, 1}; 
+	Simplex_2.coordinates = {{0, 0}, {0, 1}, {1, 0}}; 
+	Smooth_Polygon_Database[0] = Simplex_2;
+	Smooth_Polygon_Database[0].print();
+
+
 }
 
 int main(){
