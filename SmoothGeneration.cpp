@@ -76,7 +76,6 @@ void unimodular3simplexexample(){
 	Triangulation K_4; 
 	K_4.number_vertices = 4;
 	K_4.adjacencies = {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}};
-	cout << K_4.degree_of_vertex(3) << endl;
 	/*for(int row = 0; row < K_4.number_vertices; row ++){
 		for(int col = 0; col < K_4.number_vertices; col ++){
 			if(row != col){
