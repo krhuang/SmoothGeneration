@@ -25,6 +25,11 @@ class Smooth_Polygon{
 				cout << edge_lengths[i] << "." << endl;
 			}
 		}
+	}\
+
+	vector<vector<int>> Embedding_Vertex_Coordinates(int first_vertex, vector<int> first_point, vector<int> second_point, vector<int> third_point){
+		//returns the vertices of the smooth polygon as embedded according to assigning the vertex to the first_coordinate and the one after it to the second_coordinate
+		//make sure to mod by polygon number_vertices to make cyclic behaviour
 	}
 };
 Smooth_Polygon Smooth_Polygon_Database[1];
