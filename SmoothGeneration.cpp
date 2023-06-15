@@ -2,7 +2,6 @@
 #include <vector>
 using namespace std;
 int max_lattice_points = 20;
-int adjacency_graph[4][4];
 
 class Smooth_Polygon{
 	public:
@@ -30,6 +29,11 @@ class Smooth_Polygon{
 	vector<vector<int>> Embedding_Vertex_Coordinates(int first_vertex, vector<int> first_point, vector<int> second_point, vector<int> third_point){
 		//returns the vertices of the smooth polygon as embedded according to assigning the vertex to the first_coordinate and the one after it to the second_coordinate
 		//make sure to mod by polygon number_vertices to make cyclic behaviour
+			int second_vertex = (first_vertex + 1)%number_vertices;
+			int third_vertex = (second_vertex + 1)%number_vertices;
+			int first_length = edge_lengths[first_vertex];
+			int second_length = edge_lengths[second_vertex];
+		return {{1, 1}};
 	}
 };
 Smooth_Polygon Smooth_Polygon_Database[1];
@@ -41,18 +45,13 @@ class Triangulation{
 		int number_vertices;
 		vector<vector<int>> adjacencies;
 		vector<vector<int>> edge_weights;
-	int degree_of_vertex(int vertex_number){
+	int vertex_degree(int vertex_number){
 		return adjacencies[vertex_number].size();
 	}
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices." << endl;
 		cout << "Its Adjacency Graph is given by the 0-1s matrix" << endl;
-		for(int row = 0; row < number_vertices; row ++){
-			for(int col = 0; col < number_vertices; col ++){
-				cout << adjacency_graph[row][col];
-			}
-			cout << endl;
-		}
+		
 	}
 };
 
