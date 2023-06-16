@@ -1,10 +1,18 @@
 #include <iostream>
 #include <vector>
 using namespace std;
-int max_lattice_points = 20;
+int MAX_LATTICE_POINTS = 8;
 
 class Smooth_Polygon{
 	public:
+		//constructors
+		Smooth_Polygon(){ //default constructor
+		}
+
+		Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<pair<int, int>> init_coordinates)
+			: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), coordinates(init_coordinates)
+		{}
+
 		int number_vertices;
 		int number_interior_lattice_points;
 		vector<int> edge_lengths; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
@@ -98,11 +106,11 @@ void unimodular3simplexexample(){
 		}
 	}
 
-	Smooth_Polygon Simplex_2;
-	Simplex_2.number_vertices = 3;
+	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
+	/*Simplex_2.number_vertices = 3;
 	Simplex_2.number_interior_lattice_points = 0;
 	Simplex_2.edge_lengths = {1, 1, 1}; 
-	Simplex_2.coordinates = {{0, 0}, {0, 1}, {1, 0}}; 
+	Simplex_2.coordinates = {{0, 0}, {0, 1}, {1, 0}}; */
 	Smooth_Polygon_Database[0] = Simplex_2;
 	Smooth_Polygon_Database[0].print();
 
