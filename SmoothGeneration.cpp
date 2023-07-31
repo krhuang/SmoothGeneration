@@ -13,6 +13,12 @@ void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, t
 	}
 }
 
+void print_dictionary(map<set<int>, vector<int>> dictionary){
+	for(iter = dictionary.begin(); iter != dictionary.end(); iter++){
+		cout << dictionary.first() << " " << dictionary.second() << endl;
+	}
+}
+
 
 class Smooth_Polygon{
 	public:
@@ -20,20 +26,18 @@ class Smooth_Polygon{
 		Smooth_Polygon(){ //default constructor
 		}
 
-		Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<pair<int, int>> init_coordinates)
-			: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), coordinates(init_coordinates)
+		Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
+			: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
 		{}
 
 		int number_vertices{ 0 };
 		int number_interior_lattice_points{ 0 };
 		vector<int> edge_lengths{ {} }; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
-		vector<pair<int, int>> coordinates{ {0, 0} }; //vertex coordinates
+		vector<vector<int>> vertex_coordinates{ {0, 0} }; //vertex coordinates
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << endl;
 		cout << "Its vertices are " << endl;
-		for(int i=0; i < number_vertices; i ++){
-			cout << coordinates[i].first << ", " << coordinates[i].second << endl;
-		}
+		print_matrix(vertex_coordinates);
 		cout << "and it has clockwise edge lengths ";
 		for(int i=0; i < number_vertices; i++){
 			if(i < number_vertices - 1){
@@ -54,7 +58,7 @@ class Smooth_Polygon{
 			int second_length = edge_lengths[second_vertex];
 
 
-		return {{1, 1}};
+		return {{1, 1}}; //placeholder
 	}
 };
 Smooth_Polygon Smooth_Polygon_Database[1];//Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
@@ -114,20 +118,23 @@ class Smooth3Polytope{
 	public:	
 		int current_vertices; //counts the number of vertices as the polytope is being built up
 		int total_vertices; //computed via euler characteristic
-		vector<vector<int>> coordinates;
+		map<set<int>, vector<int>> vertex_coordinates;
 
 	Smooth3Polytope(Triangulation triangulation, vector<int> shelling_order){ //Constructs Smooth 3 Polytope(s) based on a weighted input-triangulation and a shelling_order
 		current_vertices = 0; 
 		total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
-		map<set<int>, vector<int>> vertex_coordinates;
 		vertex_coordinates[{shelling_order[0], shelling_order[1], shelling_order[2]}] = {0, 0, 0};
 		
 		//0th vertex in shelling order. This corresponds to a face on the xy-plane
 		if(triangulation.edge_weights[shelling_order[0]] == Smooth_Polygon_Database[0].edge_lengths){
-			int adjacency = 0;
-			
-			
-
+			vector<vector<int>> new_vertices = Smooth_Polygon_Database[0].vertex_coordinates;
+			for(int i = 0; i < new_vertices.size(); i++){
+				new_vertices[i].push_back(0);
+			}
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
+				vertex_coordinates[{shelling_order[0], triangulation.adjacencies[shelling_order[0]][i], triangulation.adjacencies[shelling_order[0]][i-1 % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
+				cout << triangulation.adjacencies[shelling_order[0]][i] << endl;
+			}
 			/*for(int adjacency = 0; adjacency < input_triangulation.adjacencies[0].size(); adjacency++){
 				//cout << input_triangulation.adjacencies[0][adjacency] << endl;
 				if(input_triangulation.adjacencies[0][adjacency] == 1){
@@ -146,7 +153,7 @@ class Smooth3Polytope{
 
 void unimodular3simplexexample(){
 	//Initialization
-	Triangulation K_4(4, {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}}); 
+	Triangulation K_4(4, {{1, 3, 2}, {2, 3, 0}, {0, 3, 1}, {0, 1, 2}}); 
 	//K_4.number_vertices = 4;
 	//K_4.adjacencies = {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}};
 	//K_4.print();
