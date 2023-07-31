@@ -88,20 +88,9 @@ class Triangulation{
 		vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
 		vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
 		vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
-	/*void print_adjacency_matrix(){
-		print_matrix(adjacency_matrix);
-	}*/
 	int vertex_degree(int vertex_number){ //returns the degree of a particular vertex
 		return adjacencies[vertex_number].size();
 	}
-	/*void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, to test functions. 
-		for(int row=0; row<input_matrix.size(); row++){
-			for(int col=0; col<input_matrix[row].size(); col++){
-				cout << input_matrix[row][col];
-			}
-		cout << endl;
-		}
-	}*/
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << endl;
 		cout << "Its Adjacency Graph is given by the 0-1s matrix" << endl;
@@ -123,20 +112,22 @@ class Triangulation{
 //Smooth 3-Polytopes
 class Smooth3Polytope{
 	public:	
-		int number_vertices;
-		
+		int current_vertices; //counts the number of vertices as the polytope is being built up
+		int total_vertices; //computed via euler characteristic
 		vector<vector<int>> coordinates;
 
-	Smooth3Polytope(Triangulation input_triangulation, vector<int> shelling_order){ //Constructs Smooth 3 Polytope(s) based on a weighted input-triangulation and a shelling_order
-		number_vertices = 0;
+	Smooth3Polytope(Triangulation triangulation, vector<int> shelling_order){ //Constructs Smooth 3 Polytope(s) based on a weighted input-triangulation and a shelling_order
+		current_vertices = 0; 
+		total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
 		map<set<int>, vector<int>> vertex_coordinates;
 		vertex_coordinates[{shelling_order[0], shelling_order[1], shelling_order[2]}] = {0, 0, 0};
-
-		//input_triangulation.print();
+		
 		//0th vertex in shelling order. This corresponds to a face on the xy-plane
-		if(input_triangulation.edge_weights[shelling_order[0]] == Smooth_Polygon_Database[0].edge_lengths){
+		if(triangulation.edge_weights[shelling_order[0]] == Smooth_Polygon_Database[0].edge_lengths){
 			int adjacency = 0;
-			//cout << input_triangulation.adjacencies[0].size();
+			
+			
+
 			/*for(int adjacency = 0; adjacency < input_triangulation.adjacencies[0].size(); adjacency++){
 				//cout << input_triangulation.adjacencies[0][adjacency] << endl;
 				if(input_triangulation.adjacencies[0][adjacency] == 1){
@@ -145,7 +136,7 @@ class Smooth3Polytope{
 					int y_length = 
 				}
 			}*/
-			
+
 		}
 		//1st vertex in shelling order
 		//2nd vertex in shelling order
@@ -159,7 +150,7 @@ void unimodular3simplexexample(){
 	//K_4.number_vertices = 4;
 	//K_4.adjacencies = {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}};
 	//K_4.print();
-	Smooth3Polytope(K_4, {0, 1, 2, 3});
+	Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
 }
 
 vector<vector<int>> unimodular_matrix_inverse(vector<vector<int>> input_matrix){ // inverts unimodular 2x2 matrices using the closed-form formula. The determinant is 1 already
