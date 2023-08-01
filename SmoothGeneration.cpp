@@ -197,7 +197,8 @@ class Smooth3Polytope{
 				//x and y-lengths of the Smooth polygon we want to insert
 				//vertex
 				translation_matrix = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
-				
+				lin_transform_matrix = 
+					{{vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0]}] }};
 			}
 
 			shelling_num++;
