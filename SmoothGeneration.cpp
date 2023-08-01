@@ -1,7 +1,7 @@
 #include <iostream>
-#include <vector>
 #include <set>
 #include <map>
+#include <bits/stdc++.h>
 using namespace std;
 int MAX_LATTICE_POINTS = 8;
 void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, to test functions. 
@@ -14,8 +14,19 @@ void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, t
 }
 
 void print_dictionary(map<set<int>, vector<int>> dictionary){
+	map <set<int>, vector<int>> :: iterator iter;
+	cout << "A dictionary with" << endl;
+	cout << "keys & entries" << endl;
 	for(iter = dictionary.begin(); iter != dictionary.end(); iter++){
-		cout << dictionary.first() << " " << dictionary.second() << endl;
+		for(auto j : (*iter).first){
+			cout << j << " ";
+		}
+		//cout << 5 << endl;
+		for(int i =0; i < (*iter).second.size(); i++){
+			//cout << 5 << endl;
+			cout << (*iter).second[i];
+		}
+		cout << endl;
 	}
 }
 
@@ -124,29 +135,44 @@ class Smooth3Polytope{
 		current_vertices = 0; 
 		total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
 		vertex_coordinates[{shelling_order[0], shelling_order[1], shelling_order[2]}] = {0, 0, 0};
-		
+		vector<vector<int>> new_vertices; //new vertices to be added to dictionary
+
 		//0th vertex in shelling order. This corresponds to a face on the xy-plane
 		if(triangulation.edge_weights[shelling_order[0]] == Smooth_Polygon_Database[0].edge_lengths){
-			vector<vector<int>> new_vertices = Smooth_Polygon_Database[0].vertex_coordinates;
-			for(int i = 0; i < new_vertices.size(); i++){
+			new_vertices = Smooth_Polygon_Database[0].vertex_coordinates;
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
 				new_vertices[i].push_back(0);
 			}
 			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
-				vertex_coordinates[{shelling_order[0], triangulation.adjacencies[shelling_order[0]][i], triangulation.adjacencies[shelling_order[0]][i-1 % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
-				cout << triangulation.adjacencies[shelling_order[0]][i] << endl;
+				vertex_coordinates[{shelling_order[0], triangulation.adjacencies[shelling_order[0]][i], triangulation.adjacencies[shelling_order[0]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
+				//cout << triangulation.adjacencies[shelling_order[0]][i] << endl;
 			}
-			/*for(int adjacency = 0; adjacency < input_triangulation.adjacencies[0].size(); adjacency++){
-				//cout << input_triangulation.adjacencies[0][adjacency] << endl;
-				if(input_triangulation.adjacencies[0][adjacency] == 1){
-					//cout << adjacency << endl;
-					//cout << Smooth_Polygon_Database[0].edge_lengths[adjacency] << endl;
-					int y_length = 
-				}
-			}*/
-
+			print_dictionary(vertex_coordinates);
 		}
-		//1st vertex in shelling order
-		//2nd vertex in shelling order
+
+		//1st vertex
+		if(triangulation.edge_weights[shelling_order[1]] == Smooth_Polygon_Database[0].edge_lengths){
+			new_vertices = Smooth_Polygon_Database[0].vertex_coordinates;
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
+				new_vertices[i].insert(new_vertices[i].begin(), 0);
+			}
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
+				vertex_coordinates[{shelling_order[1], triangulation.adjacencies[shelling_order[1]][i], triangulation.adjacencies[shelling_order[1]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
+			}
+			print_dictionary(vertex_coordinates);
+		}
+
+		//2nd vertex
+		if(triangulation.edge_weights[shelling_order[2]] == Smooth_Polygon_Database[0].edge_lengths){
+			new_vertices = Smooth_Polygon_Database[0].vertex_coordinates; 
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
+				new_vertices[i].insert(new_vertices[i].begin()+1, 0);
+			}
+			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
+				vertex_coordinates[{shelling_order[2], triangulation.adjacencies[shelling_order[2]][i], triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
+			}
+			print_dictionary(vertex_coordinates);
+		}
 	}
 };
 
@@ -169,6 +195,7 @@ int main(){
 		Algorithm Steps:
 			Construct/Import a library of smooth polytopes
 			Construct/Import a database of triangulations of the sphere (ie from plantri)
+				Duplicate rotated non-isomorphic embeddings
 			For a specific triangulation
 				Assign edge lengths to the triangulation
 					[STOP CONDITION: Check if number of vertices + edge lenghts - #edges + minimum interior lattice points is >= N]
