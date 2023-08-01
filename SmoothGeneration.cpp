@@ -30,6 +30,26 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){
 	}
 }
 
+vector<int> divide_vector(vector<int> input_vector, int mod_factor){
+	for(int i = 0; i < input_vector.size(); i++){
+		if(input_vector[i] % mod_factor != 0){
+			cout << "Unclean division warning!" << endl;
+		}
+		input_vector[i] = input_vector[i] / mod_factor;
+	}
+	return input_vector;
+}
+
+vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_vector){
+	if(minuend_vector.size() != subtrahend_vector.size()){
+		cout << "Subtracting vectors of different size!" << endl;
+	}
+	vector<int> difference_vector; 
+	for(int i=0; i<minuend_vector.size(); i++){
+		difference_vector[i] = minuend_vector[i] - subtrahend_vector[i];
+	}
+	return difference_vector; 
+}
 
 class Smooth_Polygon{
 	public:
@@ -81,7 +101,7 @@ class Triangulation{
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) //Triangulation constructor
 			: number_vertices(input_number_vertices), adjacencies(input_adjacencies), number_edges(0)
 		{
-			adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}};
+			adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
 			for(int vertex = 0; vertex < number_vertices; vertex++){
 				for(int adjacency = 0; adjacency < adjacencies[vertex].size(); adjacency++){
 					adjacency_matrix[vertex][adjacencies[vertex][adjacency]] = 1;
@@ -115,14 +135,6 @@ class Triangulation{
 		
 	}
 };
-/*class SimpleGraph{
-	public:
-		int number_vertices;
-		vector<vector<int>> adjacencies; //for each vertex, denotes the vertices to which it is adjacent? 
-	void add_edge(int source, int target){
-		//adds an edge to the Simple Graph
-	}
-};*/
 
 //Smooth 3-Polytopes
 class Smooth3Polytope{
@@ -173,16 +185,30 @@ class Smooth3Polytope{
 			}
 			print_dictionary(vertex_coordinates);
 		}
+
+		//rest of the vertices
+		int shelling_num = 3;
+		while(shelling_num < triangulation.number_vertices){
+			if(triangulation.edge_weights[shelling_order[shelling_num]] == Smooth_Polygon_Database[0].edge_lengths){
+				vector<vector<int>> lin_transform_matrix = {{0, 0, 0}, {0, 0, 0}};
+				vector<int> translation_matrix = {0, 0, 0};
+				int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
+				int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1];
+				//x and y-lengths of the Smooth polygon we want to insert
+				//vertex
+				translation_matrix = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
+				
+			}
+
+			shelling_num++;
+		}
 	}
 };
 
 
 void unimodular3simplexexample(){
 	//Initialization
-	Triangulation K_4(4, {{1, 3, 2}, {2, 3, 0}, {0, 3, 1}, {0, 1, 2}}); 
-	//K_4.number_vertices = 4;
-	//K_4.adjacencies = {{1, 3, 2}, {0, 2, 3}, {0, 3, 1}, {0, 1, 2}};
-	//K_4.print();
+	Triangulation K_4(4, {{1, 3, 2}, {2, 3, 0}, {0, 3, 1}, {1, 2, 0}}); 
 	Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
 }
 
@@ -195,7 +221,10 @@ int main(){
 		Algorithm Steps:
 			Construct/Import a library of smooth polytopes
 			Construct/Import a database of triangulations of the sphere (ie from plantri)
-				Duplicate rotated non-isomorphic embeddings
+				Massage the Data!!
+					-Duplicate rotated non-isomorphic embeddings
+					-Fix Shelling order so that the first three are in the correct order
+					-and rotate adjacencies so the first three are in the previous 
 			For a specific triangulation
 				Assign edge lengths to the triangulation
 					[STOP CONDITION: Check if number of vertices + edge lenghts - #edges + minimum interior lattice points is >= N]
