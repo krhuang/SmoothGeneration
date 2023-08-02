@@ -94,16 +94,20 @@ class Smooth_Polygon{
 		}
 	}
 
-	vector<vector<int>> Embedding_Vertex_Coordinates(int first_vertex, vector<int> first_point, vector<int> second_point, vector<int> third_point){
-		//returns the vertices of the smooth polygon as embedded according to assigning the vertex to the first_coordinate and the one after it to the second_coordinate
-		//make sure to mod by polygon number_vertices to ensure cyclic behaviour
-			int second_vertex = (first_vertex + 1)%number_vertices;
-			int third_vertex = (second_vertex + 1)%number_vertices;
-			int first_length = edge_lengths[first_vertex];
-			int second_length = edge_lengths[second_vertex];
+	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination){
+		//returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
+		vector <int> translation_vector = origin_destination;
+		vector<vector<int>> new_vertices;
+		int y_length = edge_lengths[0];
+		int x_length = edge_lengths[edge_lengths.size() - 1];
+		vector<int> first_col = divide_vector(subtract_vector(x_destination, translation_vector), x_length);
+		vector<int> second_col = divide_vector(subtract_vector(y_destination, translation_vector), y_length);
+		vector<vector<int>> lin_transform_matrix = {first_col, second_col}; 
+		for(int i=0; i<edge_lengths.size(); i++){
+			new_vertices.push_back(add_vector(matrix_multiply(lin_transform_matrix, vertex_coordinates[i]), translation_vector));
 
-
-		return {{1, 1}}; //placeholder
+		}
+		return new_vertices; //placeholder
 	}
 };
 Smooth_Polygon Smooth_Polygon_Database[1];//Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
@@ -190,32 +194,35 @@ class Smooth3Polytope{
 
 		//2nd vertex
 		if(triangulation.edge_weights[shelling_order[2]] == Smooth_Polygon_Database[0].edge_lengths){
-			new_vertices = Smooth_Polygon_Database[0].vertex_coordinates; 
-			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
-				new_vertices[i].insert(new_vertices[i].begin()+1, 0);
-			}
+			int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
+			int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1];
+			new_vertices = Smooth_Polygon_Database[0].Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0});
 			print_matrix(new_vertices);
 			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
 				cout << shelling_order[2] << triangulation.adjacencies[shelling_order[2]][i] << triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices] << endl;
 				vertex_coordinates[{shelling_order[2], triangulation.adjacencies[shelling_order[2]][i], triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
-				print_dictionary(vertex_coordinates);
+				//print_dictionary(vertex_coordinates);
 			}
-			//print_dictionary(vertex_coordinates);
+			print_dictionary(vertex_coordinates);
 		}
 
 		//rest of the vertices
 		int shelling_num = 3;
 		while(shelling_num < triangulation.number_vertices){
 			if(triangulation.edge_weights[shelling_order[shelling_num]] == Smooth_Polygon_Database[0].edge_lengths){
-				vector<vector<int>> lin_transform_matrix = {{0, 0, 0}, {0, 0, 0}};
+				/*vector<vector<int>> lin_transform_matrix = {{0, 0, 0}, {0, 0, 0}};
 				vector<int> translation_vector = {0, 0, 0};
 				vector<int> first_col;
 				vector<int> second_col;
 				int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
-				int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1];
+				int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1]; */
 				//x and y-lengths of the Smooth polygon we want to insert
 				//vertex
-				translation_vector = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
+				vector<int> origin_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
+				vector<int> x_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-1], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-2]}];
+				vector<int> y_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][1]}];
+				new_vertices = Smooth_Polygon_Database[0].Affine_Transf(origin_destination, x_destination, y_destination);
+				/* translation_vector = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
 				first_col = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-1], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-2]}];
 				first_col = subtract_vector(first_col, translation_vector);
 				first_col = divide_vector(first_col, x_length);
@@ -227,21 +234,21 @@ class Smooth3Polytope{
 				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
 					new_vertices[i] = matrix_multiply(lin_transform_matrix, Smooth_Polygon_Database[0].vertex_coordinates[i]);
 					new_vertices[i] = add_vector(new_vertices[i], translation_vector);
-				}
-				print_matrix(new_vertices);
+				} */
 				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
 					if(vertex_coordinates.count({shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}) != 0){
-						if(vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i]){
-							cout << 7 << endl;
+						if(vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] != new_vertices[i]){
+							cout << "Error! Differing vertex assignments for your smooth polytope" << endl;
 						}
 					}
 					else{
-						 
+						vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i]; 
 					}
 				}
 			}
 			shelling_num++;
 		}
+		print_dictionary(vertex_coordinates);
 	}
 };
 
