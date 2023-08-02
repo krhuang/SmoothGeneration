@@ -158,8 +158,8 @@ class Smooth3Polytope{
 		map<set<int>, vector<int>> vertex_coordinates;
 
 	Smooth3Polytope(Triangulation triangulation, vector<int> shelling_order){ //Constructs Smooth 3 Polytope(s) based on a weighted input-triangulation and a shelling_order
-		current_vertices = 0; 
-		total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
+		//current_vertices = 0; 
+		//total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
 		vertex_coordinates[{shelling_order[0], shelling_order[1], shelling_order[2]}] = {0, 0, 0};
 		vector<vector<int>> new_vertices; //new vertices to be added to dictionary
 
@@ -230,9 +230,10 @@ class Smooth3Polytope{
 				}
 				print_matrix(new_vertices);
 				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
-					shelling_order[shelling_num];
-					if(vertex_coordinates.count({shelling_order[shelling_num], new_vertices[i], new_vertices[(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}) != 0){
-						cout << 6 << endl;
+					if(vertex_coordinates.count({shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}) != 0){
+						if(vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i]){
+							cout << 7 << endl;
+						}
 					}
 					else{
 						 
