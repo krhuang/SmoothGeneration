@@ -1,6 +1,5 @@
 #include <iostream>
 #include <set>
-#include <map>
 #include <bits/stdc++.h>
 using namespace std;
 int MAX_LATTICE_POINTS = 8;
@@ -230,6 +229,15 @@ class Smooth3Polytope{
 					new_vertices[i] = add_vector(new_vertices[i], translation_vector);
 				}
 				print_matrix(new_vertices);
+				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
+					shelling_order[shelling_num];
+					if(vertex_coordinates.count({shelling_order[shelling_num], new_vertices[i], new_vertices[(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}) != 0){
+						cout << 6 << endl;
+					}
+					else{
+						 
+					}
+				}
 			}
 			shelling_num++;
 		}
