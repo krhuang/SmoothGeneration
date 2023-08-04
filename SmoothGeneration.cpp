@@ -1,9 +1,10 @@
 #include <iostream>
 #include <set>
 #include <bits/stdc++.h>
+#include <time.h>
 using namespace std;
 int MAX_LATTICE_POINTS = 8;
-void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, to test functions. 
+void print_matrix(vector<vector<int>> input_matrix){ //prints matrix
 	for(int row=0; row<input_matrix.size(); row++){
 		for(int col=0; col<input_matrix[row].size(); col++){
 			cout << input_matrix[row][col];
@@ -12,7 +13,7 @@ void print_matrix(vector<vector<int>> input_matrix){ //prints a matrix for me, t
 	}
 }
 
-void print_dictionary(map<set<int>, vector<int>> dictionary){
+void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionary
 	map <set<int>, vector<int>> :: iterator iter;
 	cout << "A dictionary with" << endl;
 	cout << "keys & entries" << endl;
@@ -28,6 +29,15 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){
 		cout << endl;
 	}
 }
+
+/*
+vector<int> rotate_counterclockwise(vector<int> vector, int new_start){ //rotates a vector counterclockwise, for fixing the shelling_order
+	vector<int> output_vector;
+	for(int i = new_start; i < vector.size() + new_start; i++){
+		output_vector.push_back(vector[i % vector.size()]);
+	}
+	return output_vector;
+}*/
 
 vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect){
 	return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1], matrix[0][2]*vect[0] + matrix[1][2]*vect[1]}};
@@ -77,7 +87,7 @@ class Smooth_Polygon{
 
 		int number_vertices{ 0 };
 		int number_interior_lattice_points{ 0 };
-		vector<int> edge_lengths{ {} }; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
+		vector<int> edge_lengths{  }; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
 		vector<vector<int>> vertex_coordinates{ {0, 0} }; //vertex coordinates
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << endl;
@@ -119,7 +129,7 @@ class Triangulation{
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) //Triangulation constructor
 			: number_vertices(input_number_vertices), adjacencies(input_adjacencies), number_edges(0)
 		{
-			adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
+			/*adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
 			for(int vertex = 0; vertex < number_vertices; vertex++){
 				for(int adjacency = 0; adjacency < adjacencies[vertex].size(); adjacency++){
 					adjacency_matrix[vertex][adjacencies[vertex][adjacency]] = 1;
@@ -127,7 +137,7 @@ class Triangulation{
 				}
 			}
 			number_edges = number_edges / 2; 
-			edge_weights_matrix = adjacency_matrix;
+			edge_weights_matrix = adjacency_matrix;*/
 			edge_weights = adjacencies;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
 				for(int adjacency = 0; adjacency< edge_weights[vertex].size(); adjacency++){
@@ -197,47 +207,32 @@ class Smooth3Polytope{
 			int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
 			int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1];
 			new_vertices = Smooth_Polygon_Database[0].Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0});
-			print_matrix(new_vertices);
+			//print_matrix(new_vertices);
 			for(int i = 0; i < Smooth_Polygon_Database[0].number_vertices; i++){
 				cout << shelling_order[2] << triangulation.adjacencies[shelling_order[2]][i] << triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices] << endl;
 				vertex_coordinates[{shelling_order[2], triangulation.adjacencies[shelling_order[2]][i], triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i];
 				//print_dictionary(vertex_coordinates);
 			}
+			cout << "END OF FIRST THREE FACES" << endl;
 			print_dictionary(vertex_coordinates);
+
 		}
 
 		//rest of the vertices
 		int shelling_num = 3;
 		while(shelling_num < triangulation.number_vertices){
 			if(triangulation.edge_weights[shelling_order[shelling_num]] == Smooth_Polygon_Database[0].edge_lengths){
-				/*vector<vector<int>> lin_transform_matrix = {{0, 0, 0}, {0, 0, 0}};
-				vector<int> translation_vector = {0, 0, 0};
-				vector<int> first_col;
-				vector<int> second_col;
-				int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
-				int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1]; */
-				//x and y-lengths of the Smooth polygon we want to insert
-				//vertex
 				vector<int> origin_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
 				vector<int> x_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-1], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-2]}];
 				vector<int> y_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][1]}];
+				
+				cout << "start of loop" << endl;
 				new_vertices = Smooth_Polygon_Database[0].Affine_Transf(origin_destination, x_destination, y_destination);
-				/* translation_vector = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
-				first_col = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-1], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-2]}];
-				first_col = subtract_vector(first_col, translation_vector);
-				first_col = divide_vector(first_col, x_length);
-				second_col = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][1]}];
-				second_col = subtract_vector(second_col, translation_vector);
-				second_col = divide_vector(second_col, y_length);
-				lin_transform_matrix = {first_col, second_col};
-				print_matrix(lin_transform_matrix);
-				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
-					new_vertices[i] = matrix_multiply(lin_transform_matrix, Smooth_Polygon_Database[0].vertex_coordinates[i]);
-					new_vertices[i] = add_vector(new_vertices[i], translation_vector);
-				} */
 				for(int i=0; i<Smooth_Polygon_Database[0].number_vertices; i++){
 					if(vertex_coordinates.count({shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}) != 0){
+						cout << "Vertex already assigned (not an error)" << endl;
 						if(vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] != new_vertices[i]){
+							
 							cout << "Error! Differing vertex assignments for your smooth polytope" << endl;
 						}
 					}
@@ -245,6 +240,7 @@ class Smooth3Polytope{
 						vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_Database[0].number_vertices) % Smooth_Polygon_Database[0].number_vertices]}] = new_vertices[i]; 
 					}
 				}
+				print_dictionary(vertex_coordinates);
 			}
 			shelling_num++;
 		}
@@ -259,9 +255,14 @@ void unimodular3simplexexample(){
 	Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
 }
 
-vector<vector<int>> unimodular_matrix_inverse(vector<vector<int>> input_matrix){ // inverts unimodular 2x2 matrices using the closed-form formula. The determinant is 1 already
-	return {{input_matrix[1][1], -input_matrix[0][1]},{-input_matrix[1][0], input_matrix[0][0]}}; 
+void cubeexample(){
+	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
+	Smooth3Polytope(Octahedron, {0, 1, 2, 3, 4, 5});
 }
+
+/*vector<vector<int>> unimodular_matrix_inverse(vector<vector<int>> input_matrix){ // inverts unimodular 2x2 matrices using the closed-form formula. The determinant is 1 already
+	return {{input_matrix[1][1], -input_matrix[0][1]},{-input_matrix[1][0], input_matrix[0][0]}}; 
+}*/
 
 int main(){
 	/*
@@ -271,7 +272,7 @@ int main(){
 				Massage the Data!!
 					-Duplicate rotated non-isomorphic embeddings
 					-Fix Shelling order so that the first three are in the correct order
-					-and rotate adjacencies so the first three are in the previous 
+					-and rotate adjacencies so the first and last are previous numbers in the shelling order
 			For a specific triangulation
 				Assign edge lengths to the triangulation
 					[STOP CONDITION: Check if number of vertices + edge lenghts - #edges + minimum interior lattice points is >= N]
@@ -285,8 +286,18 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
+	clock_t tStart = clock();
+
 	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_Database[0] = Simplex_2; //initializing the smooth polytope database
-	//Smooth_Polygon_Database[0].print();
-	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
+	//unimodular3simplexexample(); //running the example for constructing a unimodular simplex
+
+
+
+	Smooth_Polygon Square = Smooth_Polygon(4, 0, {1, 1, 1, 1}, {{0, 0}, {0, 1}, {1, 1}, {1, 0}});
+	Smooth_Polygon_Database[0] = Square;
+
+	cubeexample();
+
+	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
 }
