@@ -260,10 +260,6 @@ void cubeexample(){
 	Smooth3Polytope(Octahedron, {0, 1, 2, 3, 4, 5});
 }
 
-/*vector<vector<int>> unimodular_matrix_inverse(vector<vector<int>> input_matrix){ // inverts unimodular 2x2 matrices using the closed-form formula. The determinant is 1 already
-	return {{input_matrix[1][1], -input_matrix[0][1]},{-input_matrix[1][0], input_matrix[0][0]}}; 
-}*/
-
 int main(){
 	/*
 		Algorithm Steps:
@@ -290,7 +286,7 @@ int main(){
 
 	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_Database[0] = Simplex_2; //initializing the smooth polytope database
-	//unimodular3simplexexample(); //running the example for constructing a unimodular simplex
+	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
 
 
 
@@ -300,4 +296,9 @@ int main(){
 	cubeexample();
 
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
+
+	//note: constructing smooth 3polytoppes should be a member function of the triangulation class
+	//shelling_order should be associated data of the triangulation
+	//shelling_num should be data of the function
+	//smooth polygon database should be a vector of unordered-set maps?
 }
