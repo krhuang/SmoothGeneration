@@ -13,6 +13,7 @@ void print_matrix(vector<vector<int>> input_matrix){ //prints matrix
 	}
 }
 
+
 void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionary
 	map <set<int>, vector<int>> :: iterator iter;
 	cout << "A dictionary with" << endl;
@@ -25,6 +26,17 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionar
 		for(int i =0; i < (*iter).second.size(); i++){
 			//cout << 5 << endl;
 			cout << (*iter).second[i];
+		}
+		cout << endl;
+	}
+	
+	for(auto& [key,value]: dictionary){
+		for(auto& iter: key){
+			cout << iter << " ";
+		}
+		cout << "=> ";
+		for(auto& iter: value){
+			cout << value[iter];
 		}
 		cout << endl;
 	}
@@ -117,17 +129,26 @@ class Smooth_Polygon{
 			new_vertices.push_back(add_vector(matrix_multiply(lin_transform_matrix, vertex_coordinates[i]), translation_vector));
 
 		}
-		return new_vertices; //placeholder
+		return new_vertices; 
 	}
 };
-Smooth_Polygon Smooth_Polygon_Database[1];//Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
+//Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
+
+Smooth_Polygon Smooth_Polygon_Database[1];
 
 //Triangulations, usually given by plantri in text form. 
 //Each triangulation has [number_vertices] vertices and its edges are given clockwise
 class Triangulation{
 	public:
+		int number_vertices{ 0 };
+		int number_edges{ 0 };
+		vector<vector<int>> adjacencies{}; //plantri-form
+		vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
+		vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
+		vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
+		vector<int> shelling_order;
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) //Triangulation constructor
-			: number_vertices(input_number_vertices), adjacencies(input_adjacencies), number_edges(0)
+			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
 			/*adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
 			for(int vertex = 0; vertex < number_vertices; vertex++){
@@ -145,15 +166,10 @@ class Triangulation{
 				}
 			}
 		}
-		int number_vertices{ 0 };
-		int number_edges{ 0 };
-		vector<vector<int>> adjacencies{}; //plantri-form
-		vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
-		vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
-		vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
-	int vertex_degree(int vertex_number){ //returns the degree of a particular vertex
+
+	/*int vertex_degree(int vertex_number){ //returns the degree of a particular vertex
 		return adjacencies[vertex_number].size();
-	}
+	}*/
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << endl;
 		cout << "Its Adjacency Graph is given by the 0-1s matrix" << endl;
@@ -162,10 +178,47 @@ class Triangulation{
 		print_matrix(edge_weights);
 		
 	}
+	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int vertex_number){ 
+		//a recursive function that builds polytopes and appends them to the global variable
+		vector<vector<int>> new_vertices;
+		if(vertex_number == 0){
+			for(auto& polygon:Smooth_Polygon_Database){
+				if(edge_weights[0] == polygon.edge_lengths){
+					new_vertices = polygon.vertex_coordinates;
+					for(auto& coordinate:new_vertices){
+						coordinate.push_back(0); 
+					}
+					//can I use the same iterator here? 
+					vector<vector<int>>::iterator coordinate;
+					vector<int>::iterator neighbor; 
+					vector<int>::iterator prev;
+					//FUCK IT USE A LOOP AGAIN WHATEVER
+					for(coordinate = new_vertices.begin(), neighbor = adjacencies[shelling_order[0]].begin(), prev = adjacencies[shelling_order[0]].end(); neighbor != adjacencies[shelling_order[0]].end(); prev=neighbor, neighbor++, coordinate++){
+						cout << neighbor << endl;
+						//vertex_coordinates[{shelling_order[0], neighbor, prev}] = coordinate; //?? 
+					}
+				}
+			}
+		}
+		else if(vertex_number == 1){
+
+		}
+		else if(vertex_number == 2){
+			
+		}
+		else{
+
+		}
+		if(vertex_number == number_vertices){
+
+		}
+		else{
+			build_polytopes(vertex_coordinates, vertex_number+1);
+		}
+	}
 };
 
-//Smooth 3-Polytopes
-class Smooth3Polytope{
+class Smooth3Polytope{ //Smooth3Polytopes Object
 	public:	
 		int current_vertices; //counts the number of vertices as the polytope is being built up
 		int total_vertices; //computed via euler characteristic
@@ -248,11 +301,17 @@ class Smooth3Polytope{
 	}
 };
 
+//global databases
+vector<Smooth3Polytope> Smooth_3PolytopeDatabase; 
+
 
 void unimodular3simplexexample(){
 	//Initialization
 	Triangulation K_4(4, {{1, 3, 2}, {2, 3, 0}, {0, 3, 1}, {1, 2, 0}}); 
-	Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
+	K_4.shelling_order = {0, 1, 2, 3};
+	//Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
+
+	K_4.build_polytopes({}, 0);
 }
 
 void cubeexample(){
@@ -293,7 +352,7 @@ int main(){
 	Smooth_Polygon Square = Smooth_Polygon(4, 0, {1, 1, 1, 1}, {{0, 0}, {0, 1}, {1, 1}, {1, 0}});
 	Smooth_Polygon_Database[0] = Square;
 
-	cubeexample();
+	//cubeexample();
 
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
 
