@@ -77,7 +77,7 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
 	}
 	return difference_vector; 
 }
-
+/*
 bool zippable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
 	//Checks if keys overlap between the two dictionaries. If they do, checks if the entries are the same. If any are different, returns false
 	
@@ -93,10 +93,11 @@ bool zippable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
 	}
 	return true; 
 }
-
+*/
 bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
-	map1.merge(map2);
-	map2.merge(map1);
+	//Checks if two maps have overlapping keys with differing entries. If so, returns false. 
+	map1.insert(map2.begin(), map2.end());
+	map2.insert(map1.begin(), map1.end());
 	if(map1==map2){
 		return true;
 	}
@@ -182,7 +183,9 @@ class Triangulation{
 				}
 			}
 		}
-
+	void compute_a_shelling(){
+		
+	}
 	/*int vertex_degree(int vertex_number){ //returns the degree of a particular vertex
 		return adjacencies[vertex_number].size();
 	}*/
