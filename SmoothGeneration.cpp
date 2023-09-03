@@ -17,8 +17,8 @@ void print_matrix(vector<vector<int>> input_matrix){ //prints matrix
 void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionary
 	map <set<int>, vector<int>> :: iterator iter;
 	cout << "A dictionary with" << endl;
-	cout << "keys & entries" << endl;
-	for(iter = dictionary.begin(); iter != dictionary.end(); iter++){
+	cout << "keys => entries" << endl;
+	/*for(iter = dictionary.begin(); iter != dictionary.end(); iter++){
 		for(auto j : (*iter).first){
 			cout << j << " ";
 		}
@@ -28,7 +28,7 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionar
 			cout << (*iter).second[i];
 		}
 		cout << endl;
-	}
+	}*/
 	
 	for(auto& [key,value]: dictionary){
 		for(auto& iter: key){
@@ -36,20 +36,11 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionar
 		}
 		cout << "=> ";
 		for(auto& iter: value){
-			cout << value[iter];
+			cout << iter;
 		}
 		cout << endl;
 	}
 }
-
-/*
-vector<int> rotate_counterclockwise(vector<int> vector, int new_start){ //rotates a vector counterclockwise, for fixing the shelling_order
-	vector<int> output_vector;
-	for(int i = new_start; i < vector.size() + new_start; i++){
-		output_vector.push_back(vector[i % vector.size()]);
-	}
-	return output_vector;
-}*/
 
 vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect){
 	return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1], matrix[0][2]*vect[0] + matrix[1][2]*vect[1]}};
@@ -85,6 +76,32 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
 		difference_vector.push_back(minuend_vector[i] - subtrahend_vector[i]);
 	}
 	return difference_vector; 
+}
+
+bool zippable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
+	//Checks if keys overlap between the two dictionaries. If they do, checks if the entries are the same. If any are different, returns false
+	
+	//This code is from SE post: https://stackoverflow.com/a/36734936
+	for(const auto& m1: map1){
+		auto m2 = map2.find(m1.first);
+		if(m2 != map1.end()){ //If the same key appears
+			if(m1.second != m2->second){ //And codes for DIFFERENT entries
+				cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << endl;
+				return false;
+			}
+		}
+	}
+	return true; 
+}
+
+bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
+	map1.merge(map2);
+	map2.merge(map1);
+	if(map1==map2){
+		return true;
+	}
+	cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << endl;
+	return false;
 }
 
 class Smooth_Polygon{
@@ -133,8 +150,7 @@ class Smooth_Polygon{
 	}
 };
 //Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
-
-Smooth_Polygon Smooth_Polygon_Database[1];
+Smooth_Polygon Smooth_Polygon_Database[2];
 
 //Triangulations, usually given by plantri in text form. 
 //Each triangulation has [number_vertices] vertices and its edges are given clockwise
@@ -176,49 +192,101 @@ class Triangulation{
 		print_matrix(adjacency_matrix);
 		cout << "Its Edge Weights are given by" << endl;
 		print_matrix(edge_weights);
-		
 	}
 	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int vertex_number){ 
 		//a recursive function that builds polytopes and appends them to the global variable
-		vector<vector<int>> new_vertices;
-		if(vertex_number == 0){
+		vector<vector<int>> new_vertices = {};
+		map<set<int>, vector<int>> new_vertex_coordinates = {};
+		if(vertex_number == number_vertices){
+			cout << "Finished iterating through the triangulation" << endl;
+		}
+		else if(vertex_number == 0){
 			for(auto& polygon:Smooth_Polygon_Database){
 				if(edge_weights[0] == polygon.edge_lengths){
+					new_vertex_coordinates = vertex_coordinates; 
 					new_vertices = polygon.vertex_coordinates;
 					for(auto& coordinate:new_vertices){
 						coordinate.push_back(0); 
 					}
-					//can I use the same iterator here? 
-					vector<vector<int>>::iterator coordinate;
-					vector<int>::iterator neighbor; 
-					vector<int>::iterator prev;
-					//FUCK IT USE A LOOP AGAIN WHATEVER
-					for(coordinate = new_vertices.begin(), neighbor = adjacencies[shelling_order[0]].begin(), prev = adjacencies[shelling_order[0]].end(); neighbor != adjacencies[shelling_order[0]].end(); prev=neighbor, neighbor++, coordinate++){
-						cout << neighbor << endl;
-						//vertex_coordinates[{shelling_order[0], neighbor, prev}] = coordinate; //?? 
+					int end = edge_weights[0].size();
+					int neighbor;
+					int prev;
+					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+						cout << shelling_order[0] << neighbor << prev << endl;
+						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
+					print_dictionary(new_vertex_coordinates);
+					build_polytopes(new_vertex_coordinates, vertex_number+1); 
 				}
 			}
 		}
 		else if(vertex_number == 1){
+			for(auto& polygon:Smooth_Polygon_Database){
+				if(edge_weights[1] == polygon.edge_lengths){
+					new_vertices = polygon.vertex_coordinates;
+					new_vertex_coordinates = vertex_coordinates;
+					for(auto& coordinate:new_vertices){
+						coordinate.insert(coordinate.begin(),0); 
+					}
+					int end = edge_weights[1].size();
+					int neighbor;
+					int prev;
+					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
+					}
+					print_dictionary(new_vertex_coordinates);
+					build_polytopes(new_vertex_coordinates, vertex_number+1);
+				}
+			}
 
 		}
 		else if(vertex_number == 2){
-			
+			for(auto& polygon:Smooth_Polygon_Database){
+				if(edge_weights[2] == polygon.edge_lengths){
+					new_vertex_coordinates = vertex_coordinates;
+					int y_length = polygon.edge_lengths[0];
+					int x_length = polygon.edge_lengths[polygon.edge_lengths.size() - 1];
+					new_vertices = polygon.Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0} );
+					
+					int end = edge_weights[2].size();
+					int neighbor;
+					int prev;
+					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+						new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
+					}
+					print_dictionary(new_vertex_coordinates);
+					cout << "END OF FIRST THREE FACES" << endl;
+					build_polytopes(new_vertex_coordinates, vertex_number+1);
+				}
+
+			}
 		}
 		else{
-
-		}
-		if(vertex_number == number_vertices){
-
-		}
-		else{
-			build_polytopes(vertex_coordinates, vertex_number+1);
+			for(auto& polygon:Smooth_Polygon_Database){
+				if(edge_weights[vertex_number] == polygon.edge_lengths){
+					new_vertex_coordinates = {};
+					int end = polygon.number_vertices -1;
+					vector<int> origin_destination = vertex_coordinates[{shelling_order[vertex_number], adjacencies[shelling_order[vertex_number]][0], adjacencies[shelling_order[vertex_number]][end]}];
+					vector<int> x_destination = vertex_coordinates[{shelling_order[vertex_number], adjacencies[shelling_order[vertex_number]][end], adjacencies[shelling_order[vertex_number]][end-1]}];
+					vector<int> y_destination = vertex_coordinates[{shelling_order[vertex_number], adjacencies[shelling_order[vertex_number]][0], adjacencies[shelling_order[vertex_number]][1]}];
+					new_vertices = polygon.Affine_Transf(origin_destination, x_destination, y_destination);
+					//print_matrix(new_vertices);
+					for(int i = 0, prev = end; i < polygon.number_vertices; prev = i, i++){
+						new_vertex_coordinates[{shelling_order[vertex_number], adjacencies[shelling_order[vertex_number]][i], adjacencies[shelling_order[vertex_number]][prev]}] = new_vertices[i];
+					}
+					//print_dictionary(new_vertex_coordinates);
+					if(mergable(new_vertex_coordinates, vertex_coordinates)){
+						new_vertex_coordinates.merge(vertex_coordinates);
+						print_dictionary(new_vertex_coordinates);
+						build_polytopes(new_vertex_coordinates, vertex_number+1);
+					}
+				}
+			}
 		}
 	}
 };
 
-class Smooth3Polytope{ //Smooth3Polytopes Object
+/*class Smooth3Polytope{ //Smooth3Polytopes Object
 	public:	
 		int current_vertices; //counts the number of vertices as the polytope is being built up
 		int total_vertices; //computed via euler characteristic
@@ -255,7 +323,7 @@ class Smooth3Polytope{ //Smooth3Polytopes Object
 			print_dictionary(vertex_coordinates);
 		}
 
-		//2nd vertex
+		//2nd vertex - in the xz-plane
 		if(triangulation.edge_weights[shelling_order[2]] == Smooth_Polygon_Database[0].edge_lengths){
 			int y_length = Smooth_Polygon_Database[0].edge_lengths[0];
 			int x_length = Smooth_Polygon_Database[0].edge_lengths[Smooth_Polygon_Database[0].edge_lengths.size()-1];
@@ -302,7 +370,7 @@ class Smooth3Polytope{ //Smooth3Polytopes Object
 };
 
 //global databases
-vector<Smooth3Polytope> Smooth_3PolytopeDatabase; 
+vector<Smooth3Polytope> Smooth_3PolytopeDatabase; */
 
 
 void unimodular3simplexexample(){
@@ -316,7 +384,9 @@ void unimodular3simplexexample(){
 
 void cubeexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
-	Smooth3Polytope(Octahedron, {0, 1, 2, 3, 4, 5});
+	Octahedron.shelling_order = {0, 1, 2, 3, 4, 5};
+
+	Octahedron.build_polytopes({}, 0); 
 }
 
 int main(){
@@ -345,19 +415,12 @@ int main(){
 
 	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_Database[0] = Simplex_2; //initializing the smooth polytope database
-	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
-
-
+	//unimodular3simplexexample(); //running the example for constructing a unimodular simplex
 
 	Smooth_Polygon Square = Smooth_Polygon(4, 0, {1, 1, 1, 1}, {{0, 0}, {0, 1}, {1, 1}, {1, 0}});
-	Smooth_Polygon_Database[0] = Square;
-
-	//cubeexample();
+	Smooth_Polygon_Database[1] = Square;
+	cubeexample();
 
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
 
-	//note: constructing smooth 3polytoppes should be a member function of the triangulation class
-	//shelling_order should be associated data of the triangulation
-	//shelling_num should be data of the function
-	//smooth polygon database should be a vector of unordered-set maps?
 }
