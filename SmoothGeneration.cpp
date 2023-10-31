@@ -3,6 +3,7 @@
 #include <set>
 #include <bits/stdc++.h>
 #include <time.h>
+#include <fstream>
 using namespace std;
 int MAX_LATTICE_POINTS = 8;
 bool element_of_vector(int num, vector<int> vect){
@@ -370,92 +371,6 @@ class Triangulation{
 	}
 };
 
-/*class Smooth3Polytope{ //Smooth3Polytopes Object
-	public:	
-		int current_vertices; //counts the number of vertices as the polytope is being built up
-		int total_vertices; //computed via euler characteristic
-		map<set<int>, vector<int>> vertex_coordinates;
-
-	Smooth3Polytope(Triangulation triangulation, vector<int> shelling_order){ //Constructs Smooth 3 Polytope(s) based on a weighted input-triangulation and a shelling_order
-		//current_vertices = 0; 
-		//total_vertices = 2 - triangulation.number_vertices + triangulation.number_edges; //#faces of the triangulation, via euler characteristic
-		vertex_coordinates[{shelling_order[0], shelling_order[1], shelling_order[2]}] = {0, 0, 0};
-		vector<vector<int>> new_vertices; //new vertices to be added to dictionary
-
-		//0th vertex in shelling order. This corresponds to a face on the xy-plane
-		if(triangulation.edge_weights[shelling_order[0]] == Smooth_Polygon_DB[0].edge_lengths){
-			new_vertices = Smooth_Polygon_DB[0].vertex_coordinates;
-			for(int i = 0; i < Smooth_Polygon_DB[0].number_vertices; i++){
-				new_vertices[i].push_back(0);
-			}
-			for(int i = 0; i < Smooth_Polygon_DB[0].number_vertices; i++){
-				vertex_coordinates[{shelling_order[0], triangulation.adjacencies[shelling_order[0]][i], triangulation.adjacencies[shelling_order[0]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}] = new_vertices[i];
-				//cout << triangulation.adjacencies[shelling_order[0]][i] << endl;
-			}
-			print_dictionary(vertex_coordinates);
-		}
-
-		//1st vertex
-		if(triangulation.edge_weights[shelling_order[1]] == Smooth_Polygon_DB[0].edge_lengths){
-			new_vertices = Smooth_Polygon_DB[0].vertex_coordinates;
-			for(int i = 0; i < Smooth_Polygon_DB[0].number_vertices; i++){
-				new_vertices[i].insert(new_vertices[i].begin(), 0);
-			}
-			for(int i = 0; i < Smooth_Polygon_DB[0].number_vertices; i++){
-				vertex_coordinates[{shelling_order[1], triangulation.adjacencies[shelling_order[1]][i], triangulation.adjacencies[shelling_order[1]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}] = new_vertices[i];
-			}
-			print_dictionary(vertex_coordinates);
-		}
-
-		//2nd vertex - in the xz-plane
-		if(triangulation.edge_weights[shelling_order[2]] == Smooth_Polygon_DB[0].edge_lengths){
-			int y_length = Smooth_Polygon_DB[0].edge_lengths[0];
-			int x_length = Smooth_Polygon_DB[0].edge_lengths[Smooth_Polygon_DB[0].edge_lengths.size()-1];
-			new_vertices = Smooth_Polygon_DB[0].Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0});
-			//print_matrix(new_vertices);
-			for(int i = 0; i < Smooth_Polygon_DB[0].number_vertices; i++){
-				cout << shelling_order[2] << triangulation.adjacencies[shelling_order[2]][i] << triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices] << endl;
-				vertex_coordinates[{shelling_order[2], triangulation.adjacencies[shelling_order[2]][i], triangulation.adjacencies[shelling_order[2]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}] = new_vertices[i];
-				//print_dictionary(vertex_coordinates);
-			}
-			cout << "END OF FIRST THREE FACES" << endl;
-			print_dictionary(vertex_coordinates);
-
-		}
-
-		//rest of the vertices
-		int shelling_num = 3;
-		while(shelling_num < triangulation.number_vertices){
-			if(triangulation.edge_weights[shelling_order[shelling_num]] == Smooth_Polygon_DB[0].edge_lengths){
-				vector<int> origin_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_num].size()-1]}];
-				vector<int> x_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-1], triangulation.adjacencies[shelling_order[shelling_num]][triangulation.adjacencies[shelling_order[shelling_num]].size()-2]}];
-				vector<int> y_destination = vertex_coordinates[{shelling_num, triangulation.adjacencies[shelling_order[shelling_num]][0], triangulation.adjacencies[shelling_order[shelling_num]][1]}];
-				
-				cout << "start of loop" << endl;
-				new_vertices = Smooth_Polygon_DB[0].Affine_Transf(origin_destination, x_destination, y_destination);
-				for(int i=0; i<Smooth_Polygon_DB[0].number_vertices; i++){
-					if(vertex_coordinates.count({shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}) != 0){
-						cout << "Vertex already assigned (not an error)" << endl;
-						if(vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}] != new_vertices[i]){
-							
-							cout << "Error! Differing vertex assignments for your smooth polytope" << endl;
-						}
-					}
-					else{
-						vertex_coordinates[{shelling_order[shelling_num], triangulation.adjacencies[shelling_order[shelling_num]][i], triangulation.adjacencies[shelling_order[shelling_num]][(i-1 + Smooth_Polygon_DB[0].number_vertices) % Smooth_Polygon_DB[0].number_vertices]}] = new_vertices[i]; 
-					}
-				}
-				print_dictionary(vertex_coordinates);
-			}
-			shelling_num++;
-		}
-		print_dictionary(vertex_coordinates);
-	}
-};
-
-//global databases
-vector<Smooth3Polytope> Smooth_3PolytopeDatabase; */
-
 
 void unimodular3simplexexample(){
 	//Initialization
@@ -487,6 +402,10 @@ void haaseexample(){
 	Octahedron.print();
 }
 
+void read_polygon_DB(input_file_name="Smooth2Polytopesfixed2.txt"){
+	ifstream fin = 
+}
+
 int main(){
 	/*
 		Algorithm Steps:
@@ -511,6 +430,8 @@ int main(){
 	*/
 	clock_t tStart = clock(); // For recording benchmarking runtimes 
 
+	read_polygon_DB();
+
 	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_DB.push_back(Simplex_2); //initializing the smooth polytope database
 	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
@@ -531,7 +452,7 @@ int main(){
 	Smooth_Polygon Dilated_Square = Smooth_Polygon(4, 1, {2, 2, 2, 2}, {{0, 0}, {0, 2}, {2, 2}, {2, 0}});
 	Smooth_Polygon_DB.push_back(Dilated_Square);
 
-	haaseexample();
+	//haaseexample();
 
 
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
