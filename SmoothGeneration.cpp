@@ -4,6 +4,7 @@
 #include <bits/stdc++.h>
 #include <time.h>
 #include <fstream>
+#include <numeric>
 using namespace std;
 int MAX_LATTICE_POINTS = 8;
 bool element_of_vector(int num, vector<int> vect){
@@ -38,10 +39,11 @@ void print_vector(vector<int> input_vect){
 void print_matrix(vector<vector<int>> input_matrix){ //prints matrix
 	for(int row=0; row<input_matrix.size(); row++){
 		for(int col=0; col<input_matrix[row].size(); col++){
-			cout << input_matrix[row][col];
+			cout << input_matrix[row][col] << " ";
 		}
 		cout << endl;
 	}
+	cout << endl;
 }
 
 
@@ -74,7 +76,18 @@ void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionar
 }
 
 vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect){
-	return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1], matrix[0][2]*vect[0] + matrix[1][2]*vect[1]}};
+	if(matrix[0].size()==3){
+		return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1], matrix[0][2]*vect[0] + matrix[1][2]*vect[1]}};
+	}
+	else{
+		return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1]}};
+	}
+
+}
+
+vector<vector<int>> matrix_inverse(vector<vector<int>> matrix){
+	//inverts a 2x2 matrix which has determinant 1
+	return {{matrix[1][1], -matrix[0][1]},{-matrix[1][0], matrix[0][0]}};
 }
 
 vector<int> divide_vector(vector<int> input_vector, int mod_factor){
@@ -108,23 +121,7 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
 	}
 	return difference_vector; 
 }
-/*
-bool zippable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
-	//Checks if keys overlap between the two dictionaries. If they do, checks if the entries are the same. If any are different, returns false
-	
-	//This code is from SE post: https://stackoverflow.com/a/36734936
-	for(const auto& m1: map1){
-		auto m2 = map2.find(m1.first);
-		if(m2 != map1.end()){ //If the same key appears
-			if(m1.second != m2->second){ //And codes for DIFFERENT entries
-				cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << endl;
-				return false;
-			}
-		}
-	}
-	return true; 
-}
-*/
+
 bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
 	//Checks if two maps have overlapping keys with differing entries. If so, returns false. 
 	map1.insert(map2.begin(), map2.end());
@@ -176,7 +173,6 @@ class Smooth_Polygon{
 		vector<vector<int>> lin_transform_matrix = {first_col, second_col}; 
 		for(int i=0; i<edge_lengths.size(); i++){
 			new_vertices.push_back(add_vector(matrix_multiply(lin_transform_matrix, vertex_coordinates[i]), translation_vector));
-
 		}
 		return new_vertices; 
 	}
@@ -249,7 +245,6 @@ class Triangulation{
 		while(adjacencies[shelling_order[2]][0] != shelling_order[0]){
 			rotate(adjacencies[shelling_order[2]].begin(), adjacencies[shelling_order[2]].begin() + 1, adjacencies[shelling_order[2]].end());
 		}
-
 		while(rebuilt_shelling != shelling_order){
 			int current_vertex = rebuilt_shelling.size();
 			while((element_of_vector(adjacencies[current_vertex][0], rebuilt_shelling) && element_of_vector(adjacencies[current_vertex][adjacencies[current_vertex].size()-1], rebuilt_shelling)) == false){
@@ -340,7 +335,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
 					}
 					print_dictionary(new_vertex_coordinates);
-					cout << "END OF FIRST THREE FACES" << endl;
+					cout << "Finished with the first three faces" << endl;
 					build_polytopes(new_vertex_coordinates, shelling_num+1);
 				}
 
@@ -370,7 +365,6 @@ class Triangulation{
 		}
 	}
 };
-
 
 void unimodular3simplexexample(){
 	//Initialization
@@ -402,8 +396,44 @@ void haaseexample(){
 	Octahedron.print();
 }
 
-void read_polygon_DB(input_file_name="Smooth2Polytopesfixed2.txt"){
-	ifstream fin = 
+void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
+	//Reads the smooth polygons from text file with filename "input_file_name"
+	//The input is assumed to be of the form
+	//	3: 0 0 1 0 0 1
+	//in clockwise order, and with #vertices as the start of the line
+
+	//This function reads the polygons and puts them into standard form
+	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << endl;
+	ifstream fin(input_file_name);
+	int number_vertices;
+	while(fin >> number_vertices){
+		//Read a line of the file, putting the coordinates into "vertex_coordinates"
+		char colon;
+		int x_coordinate, y_coordinate;
+		fin >> colon;
+		vector<vector<int>> vertex_coordinates;
+		int translation_x, translation_y;
+		vertex_coordinates.push_back({0,0});
+		fin >> translation_x >> translation_y;
+		for(int i = 1; i<number_vertices; i++){
+			fin >> x_coordinate >> y_coordinate;
+
+			vertex_coordinates.push_back({x_coordinate - translation_x, y_coordinate - translation_y});
+		}
+		//After finishing with a line, process it into the Smooth_Polygon_DB
+		//First put it into standard position
+		int x_length, y_length;
+		vector<vector<int>> standard_position_matrix;
+		y_length = gcd(vertex_coordinates[1][0], vertex_coordinates[1][1]);
+		x_length = gcd(vertex_coordinates[number_vertices-1][0], vertex_coordinates[number_vertices-1][1]);
+		standard_position_matrix = {{vertex_coordinates[number_vertices-1][0] / x_length, vertex_coordinates[number_vertices-1][1] / x_length},{vertex_coordinates[1][0] / y_length, vertex_coordinates[1][1] / y_length}};
+		standard_position_matrix = matrix_inverse(standard_position_matrix);
+		for(int i=0; i<number_vertices; i++){
+			vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
+		}
+		cout << number_vertices << ": " << endl;
+		print_matrix(vertex_coordinates);
+	}
 }
 
 int main(){
@@ -432,7 +462,7 @@ int main(){
 
 	read_polygon_DB();
 
-	Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
+	/*Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_DB.push_back(Simplex_2); //initializing the smooth polytope database
 	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
 
@@ -450,7 +480,7 @@ int main(){
 	Smooth_Polygon_DB.push_back(Hirzebruch_2);
 
 	Smooth_Polygon Dilated_Square = Smooth_Polygon(4, 1, {2, 2, 2, 2}, {{0, 0}, {0, 2}, {2, 2}, {2, 0}});
-	Smooth_Polygon_DB.push_back(Dilated_Square);
+	Smooth_Polygon_DB.push_back(Dilated_Square);*/
 
 	//haaseexample();
 
