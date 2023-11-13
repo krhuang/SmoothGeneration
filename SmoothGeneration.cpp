@@ -122,6 +122,20 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
 	return difference_vector; 
 }
 
+vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
+	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
+	//TODO: finish this
+	vector<int> edge_lengths;
+	vector<int> difference;
+	for(int i=0; i<vertex_coordinates.size()-1; i++){
+		difference = subtract_vector(vertex_coordinates[i+1], vertex_coordinates[i]);
+		edge_lengths.push_back(gcd(difference[0], difference[1]));
+	}
+	difference = vertex_coordinates[vertex_coordinates.size()-1];
+	edge_lengths.push_back(gcd(difference[0], difference[1]));
+	return edge_lengths;
+}
+
 bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
 	//Checks if two maps have overlapping keys with differing entries. If so, returns false. 
 	map1.insert(map2.begin(), map2.end());
@@ -431,6 +445,9 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 		for(int i=0; i<number_vertices; i++){
 			vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
 		}
+		vector<int> edge_lengths;
+		edge_lengths = compute_edge_lengths(vertex_coordinates);
+		Smooth_Polygon_DB.push_back(Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates));
 		cout << number_vertices << ": " << endl;
 		print_matrix(vertex_coordinates);
 	}
@@ -458,9 +475,9 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-	clock_t tStart = clock(); // For recording benchmarking runtimes 
+	//clock_t tStart = clock(); // For recording benchmarking runtimes 
 
-	read_polygon_DB();
+	//read_polygon_DB();
 
 	/*Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_DB.push_back(Simplex_2); //initializing the smooth polytope database
@@ -483,8 +500,11 @@ int main(){
 	Smooth_Polygon_DB.push_back(Dilated_Square);*/
 
 	//haaseexample();
-
-
+	clock_t tStart = clock();
+	Smooth_Polygon Square = Smooth_Polygon(4, 0, {1, 1, 1, 1}, {{0, 0}, {0, 1}, {1, 1}, {1, 0}});
+	Smooth_Polygon_DB.push_back(Square);
+	cubeexample();
+	cout << Smooth_Polygon_DB.size() << endl;
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
 
 }
