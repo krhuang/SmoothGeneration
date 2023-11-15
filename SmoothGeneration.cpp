@@ -133,16 +133,22 @@ bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
 
 //The class of Smooth Polygons
 class Smooth_Polygon{
-	public:
-		//Default constructor
-		Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
-			: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
-		{}
+public:
+	int number_vertices{ 0 };
+	int number_interior_lattice_points{ 0 };
+	vector<int> edge_lengths{  }; //Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
+	vector<vector<int>> vertex_coordinates{}; //Vertex coordinates
 
-		int number_vertices{ 0 };
-		int number_interior_lattice_points{ 0 };
-		vector<int> edge_lengths{  }; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
-		vector<vector<int>> vertex_coordinates{ {0, 0} }; //vertex coordinates
+	//Default constructor
+	Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
+		: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
+	{}
+
+	bool operator<(const Smooth_Polygon& other) const {
+
+		return vertex_coordinates < other.vertex_coordinates;
+	}
+
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << "\n";
 		cout << "Its vertices are " << "\n";
@@ -158,7 +164,7 @@ class Smooth_Polygon{
 		}
 	}
 
-	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination){
+	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
 		//returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
 		vector <int> translation_vector = origin_destination;
 		vector<vector<int>> new_vertices;
@@ -174,7 +180,7 @@ class Smooth_Polygon{
 	}
 };
 //Database of Smooth polygons. This should have multiple entries for different embeddings of the same smooth polygon with various vertices being 0,0
-vector<Smooth_Polygon> Smooth_Polygon_DB;
+set<Smooth_Polygon> Smooth_Polygon_DB;
 
 //Triangulations, usually given by plantri in text form. 
 //Each triangulation has [number_vertices] vertices and its edges are given clockwise
@@ -429,9 +435,15 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 		for(int i = 0; i < number_vertices; i++){
 			vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
 		}
-		vector<int> edge_lengths;
-		edge_lengths = compute_edge_lengths(vertex_coordinates);
-		Smooth_Polygon_DB.push_back(Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates));
+		//Compute its edge_lengths
+		vector<int> edge_lengths = compute_edge_lengths(vertex_coordinates);
+		//Define the incoming new Smooth Polygon
+		Smooth_Polygon new_Polygon = Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates);
+		Smooth_Polygon_DB.insert(new_Polygon);
+		//Now rotate its embeddings
+		for(int i = 1; i < number_vertices; i++){
+			Smooth_Polygon_DB.insert(new_Polygon.rotate_embedding())
+		}
 	}
 }
 
@@ -460,7 +472,6 @@ int main(){
 
 	clock_t tStart = clock();
 	read_polygon_DB();
-
 	/*Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_DB.push_back(Simplex_2); //initializing the smooth polytope database
 	unimodular3simplexexample(); //running the example for constructing a unimodular simplex
