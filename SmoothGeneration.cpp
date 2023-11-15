@@ -1,80 +1,58 @@
 #include <iostream>
 #include <fstream>
 #include <set>
-#include <bits/stdc++.h>
+#include <vector>
 #include <time.h>
 #include <fstream>
 #include <numeric>
+#include <algorithm>
+#include <map>
 using namespace std;
+//The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
 int MAX_LATTICE_POINTS = 8;
-bool element_of_vector(int num, vector<int> vect){
-	for(int i = 0; i < vect.size(); i ++){
-		if(num == vect[i]){
-			return true;
-		}
-	}
-	return false;
+
+//Checks if a number is an element of a vector
+bool element_of_vector(int num, const vector<int>& vect) {
+    return find(vect.begin(), vect.end(), num) != vect.end();
 }
 
-/*vector<int> rotate_vector(vector<int> input_vector){
-	
-		Rotates a vector, for the purposes of fixing adjacencies so that the first and last entry are always previous entries of the shelling
-		Example:
-			vector<int> vec = 
-	
-	int first_entry = input_vector[0]; 
-	input_vector.erase(input_vector.begin());
-	input_vector.push_back(first_entry);
-	return input_vector;
-}
-*/
-
-void print_vector(vector<int> input_vect){
-	for(int i =0; i < input_vect.size(); i++){
-		cout << input_vect[i] << " ";
-	}
-	cout << endl;
+//Prints out a vector
+void print_vector(const vector<int>& input_vect) {
+    for (const auto& element : input_vect) {
+        cout << element << " ";
+    }
+    cout << "\n";
 }
 
-void print_matrix(vector<vector<int>> input_matrix){ //prints matrix
-	for(int row=0; row<input_matrix.size(); row++){
-		for(int col=0; col<input_matrix[row].size(); col++){
-			cout << input_matrix[row][col] << " ";
-		}
-		cout << endl;
-	}
-	cout << endl;
+//Prints out a matrix 
+void print_matrix(const vector<vector<int>>& input_matrix) {
+    for (const auto& row : input_matrix) {
+        for (const auto& element : row) {
+            cout << element << " ";
+        }
+        cout << "\n";
+    }
+    cout << "\n";
 }
 
+//Prints out a dictionary
+void print_dictionary(const map<set<int>, vector<int>>& dictionary) {
+    cout << "A dictionary with " << "\n";
+    cout << "keys => entries" << "\n";
 
-void print_dictionary(map<set<int>, vector<int>> dictionary){ //prints dictionary
-	map <set<int>, vector<int>> :: iterator iter;
-	cout << "A dictionary with" << endl;
-	cout << "keys => entries" << endl;
-	/*for(iter = dictionary.begin(); iter != dictionary.end(); iter++){
-		for(auto j : (*iter).first){
-			cout << j << " ";
-		}
-		//cout << 5 << endl;
-		for(int i =0; i < (*iter).second.size(); i++){
-			//cout << 5 << endl;
-			cout << (*iter).second[i];
-		}
-		cout << endl;
-	}*/
-	
-	for(auto& [key,value]: dictionary){
-		for(auto& iter: key){
-			cout << iter << " ";
-		}
-		cout << "=> ";
-		for(auto& iter: value){
-			cout << iter;
-		}
-		cout << endl;
-	}
+    for (const auto& [key, value] : dictionary) {
+        for (const auto& iter : key) {
+            cout << iter << " ";
+        }
+        cout << "=> ";
+        for (const auto& iter : value) {
+            cout << iter;
+        }
+        cout << "\n";
+    }
 }
 
+//Multiplies a vector by a matrix. This only handles if the vector is 2-dimensional and the matrix is either 2x2 or 2x3.
 vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect){
 	if(matrix[0].size()==3){
 		return {{matrix[0][0]*vect[0] + matrix[1][0]*vect[1], matrix[0][1]*vect[0] + matrix[1][1]*vect[1], matrix[0][2]*vect[0] + matrix[1][2]*vect[1]}};
@@ -85,24 +63,26 @@ vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect){
 
 }
 
+//Inverts a 2x2 matrix which has determinant 1
 vector<vector<int>> matrix_inverse(vector<vector<int>> matrix){
-	//inverts a 2x2 matrix which has determinant 1
 	return {{matrix[1][1], -matrix[0][1]},{-matrix[1][0], matrix[0][0]}};
 }
 
+//Divides a entries of a vector by a factor
 vector<int> divide_vector(vector<int> input_vector, int mod_factor){
 	for(int i = 0; i < input_vector.size(); i++){
 		if(input_vector[i] % mod_factor != 0){
-			cout << "Unclean division warning!" << endl;
+			cout << "Unclean division warning!" << "\n";
 		}
 		input_vector[i] = input_vector[i] / mod_factor;
 	}
 	return input_vector;
 }
 
+//Adds together two vectors of equal size
 vector<int> add_vector(vector<int> first_summand_vector, vector<int> second_summand_vector){
 	if(first_summand_vector.size() != second_summand_vector.size()){
-		cout << "Adding vectors of different size!" << endl;
+		cout << "Adding vectors of different size!" << "\n";
 	}
 	vector<int> sum_vector; 
 	for(int i=0; i<first_summand_vector.size(); i++){
@@ -111,9 +91,10 @@ vector<int> add_vector(vector<int> first_summand_vector, vector<int> second_summ
 	return sum_vector;
 }
 
+//Subtracts two vectors of equal size
 vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_vector){
 	if(minuend_vector.size() != subtrahend_vector.size()){
-		cout << "Subtracting vectors of different size!" << endl;
+		cout << "Subtracting vectors of different size!" << "\n";
 	}
 	vector<int> difference_vector; 
 	for(int i=0; i<minuend_vector.size(); i++){
@@ -122,9 +103,12 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
 	return difference_vector; 
 }
 
+//Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
 vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
 	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
-	//TODO: finish this
+	//Example:
+	//>print_vector({{0, 0}, {0, 3}, {2,0}})
+	//>3 1 2 
 	vector<int> edge_lengths;
 	vector<int> difference;
 	for(int i=0; i<vertex_coordinates.size()-1; i++){
@@ -136,23 +120,21 @@ vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
 	return edge_lengths;
 }
 
+//Checks if two maps have overlapping keys with differing entries. If so, returns false. 
 bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2){
-	//Checks if two maps have overlapping keys with differing entries. If so, returns false. 
 	map1.insert(map2.begin(), map2.end());
 	map2.insert(map1.begin(), map1.end());
 	if(map1==map2){
 		return true;
 	}
-	cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << endl;
+	cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << "\n";
 	return false;
 }
 
+//The class of Smooth Polygons
 class Smooth_Polygon{
 	public:
-		//constructors
-		Smooth_Polygon(){ //default constructor
-		}
-
+		//Default constructor
 		Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
 			: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
 		{}
@@ -162,8 +144,8 @@ class Smooth_Polygon{
 		vector<int> edge_lengths{  }; //edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
 		vector<vector<int>> vertex_coordinates{ {0, 0} }; //vertex coordinates
 	void print(){
-		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << endl;
-		cout << "Its vertices are " << endl;
+		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << "\n";
+		cout << "Its vertices are " << "\n";
 		print_matrix(vertex_coordinates);
 		cout << "and it has clockwise edge lengths ";
 		for(int i=0; i < number_vertices; i++){
@@ -171,7 +153,7 @@ class Smooth_Polygon{
 				cout << edge_lengths[i] << ", "; 
 			}
 			else{
-				cout << edge_lengths[i] << "." << endl;
+				cout << edge_lengths[i] << "." << "\n";
 			}
 		}
 	}
@@ -228,10 +210,11 @@ class Triangulation{
 			number_edges = number_edges / 2;
 			total_edge_weight = number_edges; 
 		}
+	//Computes an arbitrary shelling order on the triangulation
+	//Here a shelling requires that the first three vertices form a triangle, and that every new vertex thereafter must form a triangle with two of the previous vertices of the shelling
 	void compute_a_shelling(){
 		shelling_order.push_back(0); 
 		for(int i = 0; shelling_order.size() < number_vertices; i++){
-		//while(shelling_order.size()<number_vertices){
 			int current_vertex = shelling_order[i];
 			int j = adjacencies[current_vertex].size()-1;
 			for(int j = adjacencies[current_vertex].size()-1; j >= 0; j--){ //going clockwise through the adjacencies of the current vertex
@@ -239,16 +222,16 @@ class Triangulation{
 					shelling_order.push_back(adjacencies[current_vertex][j]);
 				}
 			}
-			//print_vector(shelling_order);
 		}
 	}
 
-	void rotate_adjacencies(){ //rotates the various adjacency vectors so that the first and last entry are previously inside the shelling_order
+	//Rotates the various adjacency vectors so that the first and last entry are previously inside the shelling_order
+	void rotate_adjacencies(){ 
 		vector<int> rebuilt_shelling = {};
+		//The first three vertices. The origin of the smooth polygon should always be mapped to the origin in 3-space. 
 		rebuilt_shelling.push_back(shelling_order[0]);
 		rebuilt_shelling.push_back(shelling_order[1]);
 		rebuilt_shelling.push_back(shelling_order[2]);
-		//first three vertices. The origin of the smooth polygon should always be mapped to the origin in 3-space. 
 		while(adjacencies[shelling_order[0]][0] != shelling_order[1]){
 			rotate(adjacencies[shelling_order[0]].begin(), adjacencies[shelling_order[0]].begin() + 1, adjacencies[shelling_order[0]].end());
 		}
@@ -268,9 +251,11 @@ class Triangulation{
 			current_vertex++;
 		}
 	}
-	int vertex_degree(int vertex_number){ //returns the degree of a particular vertex
+	//Returns the degree of a particular vertex
+	int vertex_degree(int vertex_number){ 
 		return adjacencies[vertex_number].size();
 	}
+
 	bool has_degree_3_or_degree_4_vertex(){
 		//TODO
 
@@ -278,12 +263,12 @@ class Triangulation{
 	}
 
 	void print(){
-		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << endl;
-		cout << "Its Adjacencies are given by" << endl;
+		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
+		cout << "Its Adjacencies are given by" << "\n";
 		print_matrix(adjacencies);
-		cout << "Its Edge Weights are given by" << endl;
+		cout << "Its Edge Weights are given by" << "\n";
 		print_matrix(edge_weights);
-		cout << "and it has total edge weight " << total_edge_weight << endl;
+		cout << "and it has total edge weight " << total_edge_weight << "\n";
 		cout << "Its Shelling Order is ";
 		print_vector(shelling_order);
 	}
@@ -292,7 +277,7 @@ class Triangulation{
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		if(shelling_num == number_vertices){
-			cout << "Finished iterating through the triangulation" << endl;
+			cout << "Finished iterating through the triangulation" << "\n";
 		}
 		else if(shelling_num == 0){
 			for(auto& polygon:Smooth_Polygon_DB){
@@ -305,8 +290,7 @@ class Triangulation{
 					int end = edge_weights[shelling_order[0]].size();
 					int neighbor;
 					int prev;
-					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
-						//cout << shelling_order[0] << neighbor << prev << endl;
+					for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
 						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
 					print_dictionary(new_vertex_coordinates);
@@ -325,11 +309,11 @@ class Triangulation{
 					int end = edge_weights[shelling_order[1]].size();
 					int neighbor;
 					int prev;
-					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+					for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
 						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 					}
 					print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num+1);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1);
 				}
 			}
 
@@ -349,8 +333,8 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
 					}
 					print_dictionary(new_vertex_coordinates);
-					cout << "Finished with the first three faces" << endl;
-					build_polytopes(new_vertex_coordinates, shelling_num+1);
+					cout << "Finished with the first three faces" << "\n";
+					build_polytopes(new_vertex_coordinates, shelling_num + 1);
 				}
 
 			}
@@ -359,7 +343,7 @@ class Triangulation{
 			for(auto& polygon:Smooth_Polygon_DB){
 				if(edge_weights[shelling_num] == polygon.edge_lengths){
 					new_vertex_coordinates = {};
-					int end = polygon.number_vertices -1;
+					int end = polygon.number_vertices - 1;
 					vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
 					vector<int> x_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][end], adjacencies[shelling_order[shelling_num]][end-1]}];
 					vector<int> y_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][1]}];
@@ -372,7 +356,7 @@ class Triangulation{
 					if(mergable(new_vertex_coordinates, vertex_coordinates)){
 						new_vertex_coordinates.merge(vertex_coordinates);
 						print_dictionary(new_vertex_coordinates);
-						build_polytopes(new_vertex_coordinates, shelling_num+1);
+						build_polytopes(new_vertex_coordinates, shelling_num + 1);
 					}
 				}
 			}
@@ -417,7 +401,7 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 	//in clockwise order, and with #vertices as the start of the line
 
 	//This function reads the polygons and puts them into standard form
-	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << endl;
+	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << "\n";
 	ifstream fin(input_file_name);
 	int number_vertices;
 	while(fin >> number_vertices){
@@ -439,17 +423,15 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 		int x_length, y_length;
 		vector<vector<int>> standard_position_matrix;
 		y_length = gcd(vertex_coordinates[1][0], vertex_coordinates[1][1]);
-		x_length = gcd(vertex_coordinates[number_vertices-1][0], vertex_coordinates[number_vertices-1][1]);
+		x_length = gcd(vertex_coordinates[number_vertices - 1][0], vertex_coordinates[number_vertices-1][1]);
 		standard_position_matrix = {{vertex_coordinates[number_vertices-1][0] / x_length, vertex_coordinates[number_vertices-1][1] / x_length},{vertex_coordinates[1][0] / y_length, vertex_coordinates[1][1] / y_length}};
 		standard_position_matrix = matrix_inverse(standard_position_matrix);
-		for(int i=0; i<number_vertices; i++){
+		for(int i = 0; i < number_vertices; i++){
 			vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
 		}
 		vector<int> edge_lengths;
 		edge_lengths = compute_edge_lengths(vertex_coordinates);
 		Smooth_Polygon_DB.push_back(Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates));
-		cout << number_vertices << ": " << endl;
-		print_matrix(vertex_coordinates);
 	}
 }
 
@@ -458,7 +440,7 @@ int main(){
 		Algorithm Steps:
 			Construct/Import a library of smooth 2-polytopes (ie from Balletti)
 			Construct/Import a database of triangulations of the sphere (ie from plantri)
-				Massage the Data!!
+				Massage the Data
 					-Duplicate rotated non-identical embeddings
 					-Fix Shelling order so that the first three are in the correct order
 					-and rotate adjacencies so the first and last are previous numbers in the shelling order
@@ -475,9 +457,9 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-	//clock_t tStart = clock(); // For recording benchmarking runtimes 
 
-	//read_polygon_DB();
+	clock_t tStart = clock();
+	read_polygon_DB();
 
 	/*Smooth_Polygon Simplex_2 = Smooth_Polygon(3, 0, {1, 1, 1}, {{0, 0}, {0, 1}, {1, 0}});
 	Smooth_Polygon_DB.push_back(Simplex_2); //initializing the smooth polytope database
@@ -500,11 +482,7 @@ int main(){
 	Smooth_Polygon_DB.push_back(Dilated_Square);*/
 
 	//haaseexample();
-	clock_t tStart = clock();
-	Smooth_Polygon Square = Smooth_Polygon(4, 0, {1, 1, 1, 1}, {{0, 0}, {0, 1}, {1, 1}, {1, 0}});
-	Smooth_Polygon_DB.push_back(Square);
 	cubeexample();
-	cout << Smooth_Polygon_DB.size() << endl;
-	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << endl;
+	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
 
 }
