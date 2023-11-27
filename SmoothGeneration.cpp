@@ -209,6 +209,13 @@ class Triangulation{
 		print_vector(shelling_order);
 	}
 
+	void build_all_polytopes(){
+		compute_a_shelling();
+		rotate_adjacencies();
+		print();
+		//build_polytopes();
+	}
+
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
 	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int shelling_num){ 
@@ -354,6 +361,7 @@ void read_plantri_triangulation(string input_file_name){
 			}
 		}
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
+		build_all_polytopes(new_Triangulation);
 	}
 }
 
