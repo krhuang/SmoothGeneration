@@ -121,7 +121,9 @@ class Triangulation{
 		//vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
 		//vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
 		vector<int> shelling_order;
-		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) //Triangulation constructor
+
+		//Triangulation constructor
+		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
 			/*adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
@@ -206,8 +208,10 @@ class Triangulation{
 		cout << "Its Shelling Order is ";
 		print_vector(shelling_order);
 	}
+
+
+	//A recursive function that builds 3-polytopes and appends them to the global variable
 	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int shelling_num){ 
-		//a recursive function that builds polytopes and appends them to the global variable
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		if(shelling_num == number_vertices){
@@ -332,6 +336,25 @@ void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
 	ifstream fin(input_file_name);
 	//TODO
+	int number_vertices;
+	while(fin >> number_vertices){
+		//Read a PLANTRI CODE-style triangulation of the file, putting the adjacencies into "adjacencies"
+		//Warning! PLANTRI CODE indexes from 1, see the below example from the appendix 
+		//5  3 4 0  3 5 0  1 4 5 2 0  1 5 3 0  2 3 4 0
+		vector<vector<int>> adjacencies;
+		int neighbor;
+		int current_vertex = 0;
+		while(current_vertex < number_vertices){
+			fin >> neighbor;
+			if(neighbor == 0){
+				current_vertex++;
+			}
+			else{
+				adjacencies[current_vertex].push_back(neighbor - 1);
+			}
+		}
+		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
+	}
 }
 
 //Reads the smooth polygons from text file with filename "input_file_name"
