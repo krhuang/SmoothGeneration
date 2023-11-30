@@ -120,21 +120,14 @@ class Triangulation{
 		int total_edge_weight{ 0 }; 
 		//vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
 		//vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
-		vector<int> shelling_order;
-
+		vector<int> shelling_order{};
+		//Shelling Inverse, an inverse function to the shelling order which returns the index in which the input appears
+		map<int, int> shelling_order_inverse{};
+		int smooth_polytope_vertex_count;
 		//Triangulation constructor
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
-			/*adjacency_matrix = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}; //TODO: Fix this!! 
-			for(int vertex = 0; vertex < number_vertices; vertex++){
-				for(int adjacency = 0; adjacency < adjacencies[vertex].size(); adjacency++){
-					adjacency_matrix[vertex][adjacencies[vertex][adjacency]] = 1;
-					number_edges++;
-				}
-			}
-			number_edges = number_edges / 2; 
-			edge_weights_matrix = adjacency_matrix;*/
 			edge_weights = adjacencies;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
 				for(int adjacency = 0; adjacency< edge_weights[vertex].size(); adjacency++){
@@ -144,6 +137,7 @@ class Triangulation{
 			}
 			number_edges = number_edges / 2;
 			total_edge_weight = number_edges; 
+			smooth_polytope_vertex_count = 2 + number_edges - number_vertices;
 		}
 	//Computes an arbitrary shelling order on the triangulation
 	//Here a shelling requires that the first three vertices form a triangle, and that every new vertex thereafter must form a triangle with two of the previous vertices of the shelling
@@ -157,6 +151,12 @@ class Triangulation{
 					shelling_order.push_back(adjacencies[current_vertex][j]);
 				}
 			}
+		}
+	}
+
+	void compute_shelling_inverse(){
+		for(int i = 0; i < shelling_order.size(); i++){
+			shelling_order_inverse[shelling_order[i]] = i;
 		}
 	}
 
@@ -200,6 +200,7 @@ class Triangulation{
 
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
+		cout << "It is (potentially) the dual graph of a smooth polytope with " << smooth_polytope_vertex_count << " vertices. \n"; 
 		cout << "Its Adjacencies are given by" << "\n";
 		print_matrix(adjacencies);
 		cout << "Its Edge Weights are given by" << "\n";
@@ -213,7 +214,8 @@ class Triangulation{
 		compute_a_shelling();
 		rotate_adjacencies();
 		print();
-		//build_polytopes();
+		//build_polytopes(); with many different edge lengths
+		build_polytopes_edge_weight_iterator();
 	}
 
 
@@ -307,6 +309,16 @@ class Triangulation{
 			}
 		}
 	}
+		//Iterates through increasing edge weights, according to the shelling order, and going clockwise
+	void build_polytopes_edge_weight_iterator(){
+		//Do a lattice point count! 
+		if(smooth_polytope_vertex_count + total_edge_weight - number_edges <= MAX_LATTICE_POINTS){
+			build_polytopes({}, 0);
+		}
+		else{
+			cout << "Exceeded MAX_LATTICE_POINTS restriction! (Not an error) \n";
+		}
+	}
 };
 
 void unimodular3simplexexample(){
@@ -324,6 +336,9 @@ void cubeexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
 	Octahedron.compute_a_shelling();
 	Octahedron.rotate_adjacencies();
+	Octahedron.compute_shelling_inverse();
+	Octahedron.edge_weights[0][0] = 2;
+	Octahedron.edge_weights[1][3] = 2;
 	//Octahedron.shelling_order = {0, 1, 2, 3, 4, 5};
 	Octahedron.print();
 	Octahedron.build_polytopes({}, 0); 
@@ -336,7 +351,7 @@ void haaseexample(){
 	Octahedron.print();
 	Octahedron.edge_weights = {{2, 2, 2, 2}}; 
 	Octahedron.print();
-}
+}	
 
 
 void read_plantri_triangulation(string input_file_name){
@@ -361,7 +376,7 @@ void read_plantri_triangulation(string input_file_name){
 			}
 		}
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
-		build_all_polytopes(new_Triangulation);
+		new_Triangulation.build_all_polytopes();
 	}
 }
 
@@ -430,10 +445,9 @@ int main(){
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
 	read_polygon_DB();
-	cout << Smooth_Polygon_DB.size() << endl;
+	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 
 	clock_t tStart = clock();
 	cubeexample();
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
-
 }
