@@ -93,16 +93,19 @@ public:
 	}
 
 	//Takes a Smooth_Polygon object, and rotates its embedding, so that a new vertex is the origin. 
+	//TODO: this could be simpler after we fix the standard_position function
 	void rotate_embedding(){
 		//Rotate the edge_length vector
 		//e.g. - 1 2 1 1 becomes 2 1 1 1
 		rotate(edge_lengths.begin(), edge_lengths.begin()+1, edge_lengths.end()); 
 		//Make the first vertex the new origin
+		vector<int> difference_vector = vertex_coordinates[1];
 		for(int i = 0; i < number_vertices; i++){
-			vertex_coordinates[i] = subtract_vector(vertex_coordinates[i], vertex_coordinates[1]);
+			vertex_coordinates[i] = subtract_vector(vertex_coordinates[i], difference_vector);
 		}
 		//Rotate it so the origin is the first vector
 		rotate(vertex_coordinates.begin(), vertex_coordinates.begin()+1, vertex_coordinates.end());
+		//Then put it into standard position
 		vertex_coordinates = standard_position(vertex_coordinates); 
 	}
 };
@@ -288,7 +291,7 @@ class Triangulation{
 		}
 		else{
 			for(auto& polygon:Smooth_Polygon_DB){
-				if(edge_weights[shelling_num] == polygon.edge_lengths){
+				if(edge_weights[shelling_order[shelling_num]] == polygon.edge_lengths){
 					new_vertex_coordinates = {};
 					int end = polygon.number_vertices - 1;
 					vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
@@ -337,8 +340,8 @@ void cubeexample(){
 	Octahedron.compute_a_shelling();
 	Octahedron.rotate_adjacencies();
 	Octahedron.compute_shelling_inverse();
-	Octahedron.edge_weights[0][0] = 2;
-	Octahedron.edge_weights[1][3] = 2;
+	Octahedron.edge_weights[0][3] = 2;
+	Octahedron.edge_weights[4][0] = 2;
 	//Octahedron.shelling_order = {0, 1, 2, 3, 4, 5};
 	Octahedron.print();
 	Octahedron.build_polytopes({}, 0); 
@@ -352,7 +355,6 @@ void haaseexample(){
 	Octahedron.edge_weights = {{2, 2, 2, 2}}; 
 	Octahedron.print();
 }	
-
 
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
@@ -446,7 +448,6 @@ int main(){
 	*/
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
-
 	clock_t tStart = clock();
 	cubeexample();
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
