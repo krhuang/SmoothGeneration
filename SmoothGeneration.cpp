@@ -362,7 +362,6 @@ void haaseexample(){
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
 	ifstream fin(input_file_name);
-	//TODO
 	int number_vertices;
 	while(fin >> number_vertices){
 		//Read a PLANTRI CODE-style triangulation of the file, putting the adjacencies into "adjacencies"
