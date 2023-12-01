@@ -340,8 +340,6 @@ void cubeexample(){
 	Octahedron.compute_a_shelling();
 	Octahedron.rotate_adjacencies();
 	Octahedron.compute_shelling_inverse();
-	Octahedron.edge_weights[0][3] = 2;
-	Octahedron.edge_weights[4][0] = 2;
 	//Octahedron.shelling_order = {0, 1, 2, 3, 4, 5};
 	Octahedron.print();
 	Octahedron.build_polytopes({}, 0); 
@@ -351,9 +349,14 @@ void haaseexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
 	Octahedron.compute_a_shelling();
 	Octahedron.rotate_adjacencies();
+	Octahedron.compute_shelling_inverse();
+	Octahedron.edge_weights[0] = {2, 2, 2, 2};
+	Octahedron.edge_weights[1][3] = 2;
+	Octahedron.edge_weights[2][3] = 2;
+	Octahedron.edge_weights[3][0] = 2;
+	Octahedron.edge_weights[4][0] = 2;
 	Octahedron.print();
-	Octahedron.edge_weights = {{2, 2, 2, 2}}; 
-	Octahedron.print();
+	Octahedron.build_polytopes({}, 0);
 }	
 
 void read_plantri_triangulation(string input_file_name){
@@ -449,6 +452,6 @@ int main(){
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	clock_t tStart = clock();
-	cubeexample();
+	haaseexample();
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
 }
