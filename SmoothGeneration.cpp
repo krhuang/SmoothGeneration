@@ -10,7 +10,8 @@
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-int MAX_LATTICE_POINTS = 8;
+int MAX_LATTICE_POINTS = 10;
+int counter = 0;
 
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
 vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
@@ -216,14 +217,15 @@ class Triangulation{
 	void build_all_polytopes(){
 		compute_a_shelling();
 		rotate_adjacencies();
+		compute_shelling_inverse();
 		print();
 		//build_polytopes(); with many different edge lengths
-		build_polytopes_edge_weight_iterator();
+		build_polytopes_edge_weight_iterator(0, 0);
 	}
 
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
-	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int shelling_num){ 
+	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates = {}, int shelling_num = 0){ 
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		if(shelling_num == number_vertices){
@@ -313,10 +315,82 @@ class Triangulation{
 		}
 	}
 		//Iterates through increasing edge weights, according to the shelling order, and going clockwise
-	void build_polytopes_edge_weight_iterator(){
+	void build_polytopes_edge_weight_iterator(int current_vertex, int neighbor_index){
 		//Do a lattice point count! 
-		if(smooth_polytope_vertex_count + total_edge_weight - number_edges <= MAX_LATTICE_POINTS){
-			build_polytopes({}, 0);
+		if(current_vertex == number_vertices){
+			cout << "Reached the end!" << endl;
+		}
+		else if(smooth_polytope_vertex_count + total_edge_weight - number_edges <= MAX_LATTICE_POINTS){
+			cout << smooth_polytope_vertex_count << " " << total_edge_weight << " " << number_edges << endl;
+			//"do *stuff* with the triangulation"
+			//Also iterate through edge weights, recording which edge we're on to avoid duplications
+			//This function should have input *which* edge we are on
+			//When we increase we also have to increase the symmetric edge! 
+			//Build it
+
+			//Check if we are on an already-covered edge
+			if(current_vertex > adjacencies[current_vertex][neighbor_index]){
+				//Then move to the next iteration
+				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
+					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
+				}
+				else{
+					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
+				}
+			}
+
+			else{
+				//Build it
+				counter++;
+				//print();
+				//build_polytopes({}, 0);
+				//Pass with increased iterator and increased weight on the new vertex
+				vector<vector<int>> edge_weights_copy = edge_weights;
+				int total_edge_weight_copy = total_edge_weight;
+				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
+					//Increase total_edge_weight by one
+					total_edge_weight++;
+					//Increase the next edge weight by one
+					edge_weights[current_vertex+1][0]++;
+					int neighbor_vertex = adjacencies[current_vertex+1][0];
+					//also its symmetric edge weight
+					for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
+						if(i == current_vertex+1){
+							edge_weights[neighbor_vertex][i]++;
+						}
+					}
+					cout << "5555" << endl;
+					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
+				}
+				else{
+					total_edge_weight++;
+					edge_weights[current_vertex][neighbor_index+1]++;
+					int neighbor_vertex = adjacencies[current_vertex][neighbor_index+1];
+					for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
+						if(i == current_vertex){
+							edge_weights[neighbor_vertex][i]++;
+						}
+					}
+					cout << "6666" << endl;
+					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
+				}
+				//Reset edge weights
+				edge_weights = edge_weights_copy;
+				total_edge_weight = total_edge_weight_copy;
+				//Pass with increased weight
+				total_edge_weight++;
+				edge_weights[current_vertex][neighbor_index]++;
+				int neighbor_vertex = adjacencies[current_vertex][neighbor_index];
+				for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
+					if(i == current_vertex+1){
+						edge_weights[neighbor_vertex][i]++;
+					}
+				}
+				build_polytopes_edge_weight_iterator(current_vertex, neighbor_index); 
+
+
+			}
+			
 		}
 		else{
 			cout << "Exceeded MAX_LATTICE_POINTS restriction! (Not an error) \n";
@@ -337,12 +411,7 @@ void unimodular3simplexexample(){
 
 void cubeexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
-	Octahedron.compute_a_shelling();
-	Octahedron.rotate_adjacencies();
-	Octahedron.compute_shelling_inverse();
-	//Octahedron.shelling_order = {0, 1, 2, 3, 4, 5};
-	Octahedron.print();
-	Octahedron.build_polytopes({}, 0); 
+	Octahedron.build_all_polytopes();
 }
 
 void haaseexample(){
@@ -451,6 +520,7 @@ int main(){
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	clock_t tStart = clock();
-	haaseexample();
+	cubeexample();
+	cout << counter << " different edge_weight assignments done" << endl;
 	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
 }
