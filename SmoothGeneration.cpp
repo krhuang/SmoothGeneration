@@ -10,7 +10,7 @@
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-int MAX_LATTICE_POINTS = 10;
+int MAX_LATTICE_POINTS = 21;
 int counter = 0;
 
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
@@ -316,10 +316,10 @@ class Triangulation{
 	}
 		//Iterates through increasing edge weights, according to the shelling order, and going clockwise
 	void build_polytopes_edge_weight_iterator(int current_vertex, int neighbor_index){
-		//Do a lattice point count! 
 		if(current_vertex == number_vertices){
 			cout << "Reached the end!" << endl;
 		}
+		//Do a lattice point count! 
 		else if(smooth_polytope_vertex_count + total_edge_weight - number_edges <= MAX_LATTICE_POINTS){
 			cout << smooth_polytope_vertex_count << " " << total_edge_weight << " " << number_edges << endl;
 			//"do *stuff* with the triangulation"
@@ -342,12 +342,12 @@ class Triangulation{
 			else{
 				//Build it
 				counter++;
-				//print();
-				//build_polytopes({}, 0);
+				print();
+				build_polytopes({}, 0);
 				//Pass with increased iterator and increased weight on the new vertex
 				vector<vector<int>> edge_weights_copy = edge_weights;
 				int total_edge_weight_copy = total_edge_weight;
-				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
+				/*if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
 					//Increase total_edge_weight by one
 					total_edge_weight++;
 					//Increase the next edge weight by one
@@ -371,7 +371,14 @@ class Triangulation{
 							edge_weights[neighbor_vertex][i]++;
 						}
 					}
-					cout << "6666" << endl;
+					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
+				}*/
+				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
+					cout << "5555" << endl;
+					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
+				}
+				else {
+					cout << "5555" << endl;
 					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
 				}
 				//Reset edge weights
