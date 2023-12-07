@@ -10,7 +10,7 @@
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-int MAX_LATTICE_POINTS = 21;
+int MAX_LATTICE_POINTS = 12;
 int counter = 0;
 
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
