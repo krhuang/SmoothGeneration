@@ -13,6 +13,31 @@ using namespace std;
 int MAX_LATTICE_POINTS = 12;
 int counter = 0;
 
+//Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
+void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<vector<int>>& result){
+	
+
+	if (current.size() == boxes){
+		result.push_back(current);
+		return;
+	}
+
+	for (int i = 0; i <= balls; i++){
+		current.push_back(i);
+		balls_and_boxes_helper(balls - i, boxes, current, result);
+		current.pop_back();
+	}
+}
+
+vector<vector<int>> balls_and_boxes(int balls, int boxes){
+	vector<vector<int>> result;
+	vector<int> current;
+
+	balls_and_boxes_helper(balls, boxes, current, result);
+
+	return result;
+}
+
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
 vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
 	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
@@ -314,7 +339,8 @@ class Triangulation{
 			}
 		}
 	}
-		//Iterates through increasing edge weights, according to the shelling order, and going clockwise
+	//Iterates through increasing edge weights, according to the shelling order, and going clockwise
+	//Instead, do this during the build_polytopes steps.. 
 	void build_polytopes_edge_weight_iterator(int current_vertex, int neighbor_index){
 		if(current_vertex == number_vertices){
 			cout << "Reached the end!" << endl;
@@ -524,10 +550,14 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
+
+
+    /*
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	clock_t tStart = clock();
 	cubeexample();
 	cout << counter << " different edge_weight assignments done" << endl;
-	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
+	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";*/
+
 }
