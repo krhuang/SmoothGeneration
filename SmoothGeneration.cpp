@@ -250,6 +250,8 @@ class Triangulation{
 
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
+	//This should also have as input the edge-weights map which tells the recursion what edge weights have been used so far
+	//As well as 
 	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates = {}, int shelling_num = 0){ 
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
