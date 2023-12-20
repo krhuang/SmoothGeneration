@@ -251,9 +251,10 @@ class Triangulation{
 		print_vector(shelling_order);
 	}
 
-	vector<vector<int>> edge_length_allocations(int shelling_num, int remaining_weight, vector<vector<int>>& edge_weights){
+	//Returns possible edge-length allocations along with the total weight used, as the second of the pair
+	vector <pair<vector<int>, int>> edge_length_allocations(int shelling_num, int remaining_weight, vector<vector<int>>& edge_weights){
 		//Fill in edge weights
-		
+
 		//Call balls and boxes on zero-valued edges
 
 
@@ -261,9 +262,9 @@ class Triangulation{
 
 		vector<int> vertex_edge_weight;
 		for(int i = 0; i < adjacencies[shelling_order[shelling_num]].size(); i++){
-			vertex_edge_weight.push_back(2);
+			vertex_edge_weight.push_back(1);
 		}
-		return {vertex_edge_weight}; 
+		return {[vertex_edge_weight, 0]}; 
 	}
 
 	void build_all_polytopes(){
@@ -282,6 +283,7 @@ class Triangulation{
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		vector<int> curent_vertex_edge_lengths;
+		int used_weight;
 		if(remaining_weight < 0){
 			cout << "Error! Somehow went below 0 remaining_weight!" << endl;
 		}
@@ -289,11 +291,13 @@ class Triangulation{
 			cout << "Finished iterating through the triangulation" << "\n";
 		}
 		else if(shelling_num == 0){
-			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+			for(auto& current_vertex_edge_lengths,used_weight] : edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
 						new_vertices = polygon.vertex_coordinates; 
 						new_vertex_coordinates = vertex_coordinates; 
+						new_edge_weights = edge_weights
+						new_edge_weights[shelling_order[shelling_num]] = current_vertex_edge_lengths;
 						for(auto& coordinate:new_vertices){
 							coordinate.push_back(0); 
 						}
@@ -304,7 +308,7 @@ class Triangulation{
 							new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 						}
 						print_dictionary(new_vertex_coordinates);
-						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight, edge_weights); 
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight, new_edge_weights); 
 					}
 				}
 			}
