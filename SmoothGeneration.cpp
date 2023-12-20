@@ -9,9 +9,10 @@
 #include <map>
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
+
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-int MAX_LATTICE_POINTS = 12;
-int counter = 0;
+const int MAX_LATTICE_POINTS = 12;
+
 
 //Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
 void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<vector<int>>& result){
@@ -145,7 +146,7 @@ class Triangulation{
 		int number_vertices{ 0 };
 		int number_edges{ 0 };
 		vector<vector<int>> adjacencies{}; //plantri-form
-		vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
+		//vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
 		int total_edge_weight{ 0 }; 
 		//vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
 		//vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
@@ -157,10 +158,10 @@ class Triangulation{
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
-			edge_weights = adjacencies;
+			//edge_weights = adjacencies;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
-				for(int adjacency = 0; adjacency< edge_weights[vertex].size(); adjacency++){
-					edge_weights[vertex][adjacency] = 1;
+				for(int adjacency = 0; adjacency< adjacencies[vertex].size(); adjacency++){
+					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
 				}
 			}
@@ -170,6 +171,17 @@ class Triangulation{
 		}
 	//Computes an arbitrary shelling order on the triangulation
 	//Here a shelling requires that the first three vertices form a triangle, and that every new vertex thereafter must form a triangle with two of the previous vertices of the shelling
+	
+	vector<vector<int>> initial_edge_lengths(){
+		vector<vector<int>> edge_weights = adjacencies; 
+		for(int vertex = 0; vertex < number_vertices; vertex++){
+			for(int adjacency = 0; adjacency< adjacencies[vertex].size(); adjacency++){
+				edge_weights[vertex][adjacency] = 0;	
+			}
+		}
+		return edge_weights;
+	}
+
 	void compute_a_shelling(){
 		shelling_order.push_back(0); 
 		for(int i = 0; shelling_order.size() < number_vertices; i++){
@@ -232,203 +244,139 @@ class Triangulation{
 		cout << "It is (potentially) the dual graph of a smooth polytope with " << smooth_polytope_vertex_count << " vertices. \n"; 
 		cout << "Its Adjacencies are given by" << "\n";
 		print_matrix(adjacencies);
-		cout << "Its Edge Weights are given by" << "\n";
-		print_matrix(edge_weights);
+		//cout << "Its Edge Weights are given by" << "\n";
+		//print_matrix(edge_weights);
 		cout << "and it has total edge weight " << total_edge_weight << "\n";
 		cout << "Its Shelling Order is ";
 		print_vector(shelling_order);
+	}
+
+	vector<vector<int>> edge_length_allocations(int shelling_num, int remaining_weight, vector<vector<int>>& edge_weights){
+		//Fill in edge weights
+		
+		//Call balls and boxes on zero-valued edges
+
+
+		//test function below
+
+		vector<int> vertex_edge_weight;
+		for(int i = 0; i < adjacencies[shelling_order[shelling_num]].size(); i++){
+			vertex_edge_weight.push_back(2);
+		}
+		return {vertex_edge_weight}; 
 	}
 
 	void build_all_polytopes(){
 		compute_a_shelling();
 		rotate_adjacencies();
 		compute_shelling_inverse();
-		print();
 		//build_polytopes(); with many different edge lengths
-		build_polytopes_edge_weight_iterator(0, 0);
+		vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
+		build_polytopes_edge_weights_test({}, 0, 20, initialized_edge_lengths);
 	}
-
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
 	//This should also have as input the edge-weights map which tells the recursion what edge weights have been used so far
-	//As well as 
-	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates = {}, int shelling_num = 0){ 
+	//As well as a remaining_weight counter to know when we've built too large of a polytope
+	void build_polytopes_edge_weights_test(map<set<int>, vector<int>> vertex_coordinates, int shelling_num, int remaining_weight, vector<vector<int>> edge_weights){ 
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
+		vector<int> curent_vertex_edge_lengths;
+		if(remaining_weight < 0){
+			cout << "Error! Somehow went below 0 remaining_weight!" << endl;
+		}
 		if(shelling_num == number_vertices){
 			cout << "Finished iterating through the triangulation" << "\n";
 		}
 		else if(shelling_num == 0){
-			for(auto& polygon:Smooth_Polygon_DB){
-				if(edge_weights[shelling_order[0]] == polygon.edge_lengths){
-					new_vertices = polygon.vertex_coordinates; 
-					new_vertex_coordinates = vertex_coordinates; 
-					for(auto& coordinate:new_vertices){
-						coordinate.push_back(0); 
+			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+				for(auto& polygon:Smooth_Polygon_DB){
+					if(current_vertex_edge_lengths == polygon.edge_lengths){
+						new_vertices = polygon.vertex_coordinates; 
+						new_vertex_coordinates = vertex_coordinates; 
+						for(auto& coordinate:new_vertices){
+							coordinate.push_back(0); 
+						}
+						int end = edge_weights[shelling_order[0]].size();
+						int neighbor;
+						int prev;
+						for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
+							new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
+						}
+						print_dictionary(new_vertex_coordinates);
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight, edge_weights); 
 					}
-					int end = edge_weights[shelling_order[0]].size();
-					int neighbor;
-					int prev;
-					for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
-						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
-					}
-					print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num+1); 
 				}
 			}
 		}
 		else if(shelling_num == 1){
-			for(auto& polygon:Smooth_Polygon_DB){
-				if(edge_weights[shelling_order[1]] == polygon.edge_lengths){
-					new_vertices = polygon.vertex_coordinates;
-					new_vertex_coordinates = vertex_coordinates;
-					for(auto& coordinate:new_vertices){
-						coordinate.insert(coordinate.begin(),0); 
+			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+				for(auto& polygon:Smooth_Polygon_DB){
+					if(current_vertex_edge_lengths == polygon.edge_lengths){
+						new_vertices = polygon.vertex_coordinates;
+						new_vertex_coordinates = vertex_coordinates;
+						for(auto& coordinate:new_vertices){
+							coordinate.insert(coordinate.begin(),0); 
+						}
+						int end = edge_weights[shelling_order[1]].size();
+						int neighbor;
+						int prev;
+						for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
+							new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
+						}
+						print_dictionary(new_vertex_coordinates);
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
 					}
-					int end = edge_weights[shelling_order[1]].size();
-					int neighbor;
-					int prev;
-					for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
-						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
-					}
-					print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num + 1);
 				}
 			}
 
 		}
 		else if(shelling_num == 2){
-			for(auto& polygon:Smooth_Polygon_DB){
-				if(edge_weights[shelling_order[2]] == polygon.edge_lengths){
-					new_vertex_coordinates = vertex_coordinates;
-					int y_length = polygon.edge_lengths[0];
-					int x_length = polygon.edge_lengths[polygon.edge_lengths.size() - 1];
-					new_vertices = polygon.Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0} );
-					
-					int end = edge_weights[shelling_order[2]].size();
-					int neighbor;
-					int prev;
-					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
-						new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
-					}
-					print_dictionary(new_vertex_coordinates);
-					cout << "Finished with the first three faces" << "\n";
-					build_polytopes(new_vertex_coordinates, shelling_num + 1);
-				}
-
-			}
-		}
-		else{
-			for(auto& polygon:Smooth_Polygon_DB){
-				if(edge_weights[shelling_order[shelling_num]] == polygon.edge_lengths){
-					new_vertex_coordinates = {};
-					int end = polygon.number_vertices - 1;
-					vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
-					vector<int> x_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][end], adjacencies[shelling_order[shelling_num]][end-1]}];
-					vector<int> y_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][1]}];
-					new_vertices = polygon.Affine_Transf(origin_destination, x_destination, y_destination);
-					//print_matrix(new_vertices);
-					for(int i = 0, prev = end; i < polygon.number_vertices; prev = i, i++){
-						new_vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][i], adjacencies[shelling_order[shelling_num]][prev]}] = new_vertices[i];
-					}
-					//print_dictionary(new_vertex_coordinates);
-					if(mergable(new_vertex_coordinates, vertex_coordinates)){
-						new_vertex_coordinates.merge(vertex_coordinates);
+			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+				for(auto& polygon:Smooth_Polygon_DB){
+					if(current_vertex_edge_lengths == polygon.edge_lengths){
+						new_vertex_coordinates = vertex_coordinates;
+						int y_length = polygon.edge_lengths[0];
+						int x_length = polygon.edge_lengths[polygon.edge_lengths.size() - 1];
+						new_vertices = polygon.Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0} );
+						
+						int end = edge_weights[shelling_order[2]].size();
+						int neighbor;
+						int prev;
+						for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+							new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
+						}
 						print_dictionary(new_vertex_coordinates);
-						build_polytopes(new_vertex_coordinates, shelling_num + 1);
+						cout << "Finished with the first three faces" << "\n";
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
 					}
+
 				}
 			}
-		}
-	}
-	//Iterates through increasing edge weights, according to the shelling order, and going clockwise
-	//Instead, do this during the build_polytopes steps.. 
-	void build_polytopes_edge_weight_iterator(int current_vertex, int neighbor_index){
-		if(current_vertex == number_vertices){
-			cout << "Reached the end!" << endl;
-		}
-		//Do a lattice point count! 
-		else if(smooth_polytope_vertex_count + total_edge_weight - number_edges <= MAX_LATTICE_POINTS){
-			cout << smooth_polytope_vertex_count << " " << total_edge_weight << " " << number_edges << endl;
-			//"do *stuff* with the triangulation"
-			//Also iterate through edge weights, recording which edge we're on to avoid duplications
-			//This function should have input *which* edge we are on
-			//When we increase we also have to increase the symmetric edge! 
-			//Build it
-
-			//Check if we are on an already-covered edge
-			if(current_vertex > adjacencies[current_vertex][neighbor_index]){
-				//Then move to the next iteration
-				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
-					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
-				}
-				else{
-					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
-				}
-			}
-
-			else{
-				//Build it
-				counter++;
-				print();
-				build_polytopes({}, 0);
-				//Pass with increased iterator and increased weight on the new vertex
-				vector<vector<int>> edge_weights_copy = edge_weights;
-				int total_edge_weight_copy = total_edge_weight;
-				/*if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
-					//Increase total_edge_weight by one
-					total_edge_weight++;
-					//Increase the next edge weight by one
-					edge_weights[current_vertex+1][0]++;
-					int neighbor_vertex = adjacencies[current_vertex+1][0];
-					//also its symmetric edge weight
-					for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
-						if(i == current_vertex+1){
-							edge_weights[neighbor_vertex][i]++;
-						}
-					}
-					cout << "5555" << endl;
-					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
-				}
-				else{
-					total_edge_weight++;
-					edge_weights[current_vertex][neighbor_index+1]++;
-					int neighbor_vertex = adjacencies[current_vertex][neighbor_index+1];
-					for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
-						if(i == current_vertex){
-							edge_weights[neighbor_vertex][i]++;
-						}
-					}
-					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
-				}*/
-				if (adjacencies[current_vertex].size() - 1 == neighbor_index) {
-					cout << "5555" << endl;
-					build_polytopes_edge_weight_iterator(current_vertex+1, 0);
-				}
-				else {
-					cout << "5555" << endl;
-					build_polytopes_edge_weight_iterator(current_vertex, neighbor_index+1);
-				}
-				//Reset edge weights
-				edge_weights = edge_weights_copy;
-				total_edge_weight = total_edge_weight_copy;
-				//Pass with increased weight
-				total_edge_weight++;
-				edge_weights[current_vertex][neighbor_index]++;
-				int neighbor_vertex = adjacencies[current_vertex][neighbor_index];
-				for(int i = 0; i < adjacencies[neighbor_vertex].size(); i++){
-					if(i == current_vertex+1){
-						edge_weights[neighbor_vertex][i]++;
-					}
-				}
-				build_polytopes_edge_weight_iterator(current_vertex, neighbor_index); 
-
-
-			}
-			
 		}
 		else{
-			cout << "Exceeded MAX_LATTICE_POINTS restriction! (Not an error) \n";
+			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+				for(auto& polygon:Smooth_Polygon_DB){
+					if(current_vertex_edge_lengths == polygon.edge_lengths){
+						new_vertex_coordinates = {};
+						int end = polygon.number_vertices - 1;
+						vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
+						vector<int> x_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][end], adjacencies[shelling_order[shelling_num]][end-1]}];
+						vector<int> y_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][1]}];
+						new_vertices = polygon.Affine_Transf(origin_destination, x_destination, y_destination);
+						//print_matrix(new_vertices);
+						for(int i = 0, prev = end; i < polygon.number_vertices; prev = i, i++){
+							new_vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][i], adjacencies[shelling_order[shelling_num]][prev]}] = new_vertices[i];
+						}
+						//print_dictionary(new_vertex_coordinates);
+						if(mergable(new_vertex_coordinates, vertex_coordinates)){
+							new_vertex_coordinates.merge(vertex_coordinates);
+							print_dictionary(new_vertex_coordinates);
+							build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
+						}
+					}
+				}
+			}
 		}
 	}
 };
@@ -441,7 +389,7 @@ void unimodular3simplexexample(){
 	K_4.print();
 	//Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
 
-	K_4.build_polytopes({}, 0);
+	//K_4.build_polytopes_edge_weights_test({}, 0);
 }
 
 void cubeexample(){
@@ -449,7 +397,7 @@ void cubeexample(){
 	Octahedron.build_all_polytopes();
 }
 
-void haaseexample(){
+/*void haaseexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
 	Octahedron.compute_a_shelling();
 	Octahedron.rotate_adjacencies();
@@ -461,7 +409,7 @@ void haaseexample(){
 	Octahedron.edge_weights[4][0] = 2;
 	Octahedron.print();
 	Octahedron.build_polytopes({}, 0);
-}	
+}	*/
 
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
@@ -554,12 +502,11 @@ int main(){
 	*/
 
 
-    /*
+    
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	clock_t tStart = clock();
 	cubeexample();
-	cout << counter << " different edge_weight assignments done" << endl;
-	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";*/
+	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
 
 }
