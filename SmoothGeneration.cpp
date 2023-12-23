@@ -252,19 +252,45 @@ class Triangulation{
 	}
 
 	//Returns possible edge-length allocations along with the total weight used, as the second of the pair
-	vector <pair<vector<int>, int>> edge_length_allocations(int shelling_num, int remaining_weight, vector<vector<int>>& edge_weights){
+	vector <pair<vector<int>, int>> edge_length_allocations(int shelling_num, int remaining_weight, const vector<vector<int>>& edge_weights){
 		//Fill in edge weights
+		cout << "Edge weights" << endl;
+		print_matrix(edge_weights);
+		//Iterate through neighbors of the current vertex
+		
+		vector<int> previous_weight;
+		/*
+		for(int neighbor = 0; neighbor < adjacencies[shelling_order[shelling_num]].size(); neighbor++){
+			//If this neighbor came before in the shelling order
+			if ( shelling_order_inverse[adjacencies[shelling_order[shelling_num]][neighbor]] < shelling_order[shelling_num] ) {
+				cout << neighbor  << " K" << endl;
+				//iterate through the neighbors of "neighbor"
+				for(int adjacency = 0; adjacency < adjacencies[neighbor].size(); adjacency++){
+					if (adjacencies[neighbor][adjacency] == shelling_order[shelling_num]){
+						previous_weight.push_back(edge_weights[neighbor][adjacency]);
+						break;
+					}
+				}
+			}
 
-		//Call balls and boxes on zero-valued edges
-
-
-		//test function below
-
-		vector<int> vertex_edge_weight;
-		for(int i = 0; i < adjacencies[shelling_order[shelling_num]].size(); i++){
-			vertex_edge_weight.push_back(1);
+			else{
+				//Make the weight 0 (unassigned)
+				previous_weight.push_back(0);
+			}
 		}
-		return {[vertex_edge_weight, 0]}; 
+		print_vector(previous_weight);
+		for(int i = 0; i < previous_weight.size(); i++){
+			previous_weight[i] = 1;
+		}*/
+		
+		vector <pair<vector<int>, int>> result;
+		for (vector<int> partition:balls_and_boxes(0,4)){
+			increment_one(partition);
+			cout << "balls boxes partition after incrementing by one" << endl;
+			print_vector(partition);
+			result.push_back(make_pair(partition, 0));
+		}
+		return result;
 	}
 
 	void build_all_polytopes(){
@@ -273,6 +299,7 @@ class Triangulation{
 		compute_shelling_inverse();
 		//build_polytopes(); with many different edge lengths
 		vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
+		print();
 		build_polytopes_edge_weights_test({}, 0, 20, initialized_edge_lengths);
 	}
 
@@ -283,7 +310,7 @@ class Triangulation{
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		vector<int> curent_vertex_edge_lengths;
-		int used_weight;
+		int used_weight = 0;
 		if(remaining_weight < 0){
 			cout << "Error! Somehow went below 0 remaining_weight!" << endl;
 		}
@@ -291,12 +318,12 @@ class Triangulation{
 			cout << "Finished iterating through the triangulation" << "\n";
 		}
 		else if(shelling_num == 0){
-			for(auto& current_vertex_edge_lengths,used_weight] : edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+			for(auto& [current_vertex_edge_lengths,used_weight] : edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
 						new_vertices = polygon.vertex_coordinates; 
 						new_vertex_coordinates = vertex_coordinates; 
-						new_edge_weights = edge_weights
+						vector<vector<int>> new_edge_weights = edge_weights;
 						new_edge_weights[shelling_order[shelling_num]] = current_vertex_edge_lengths;
 						for(auto& coordinate:new_vertices){
 							coordinate.push_back(0); 
@@ -308,17 +335,19 @@ class Triangulation{
 							new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 						}
 						print_dictionary(new_vertex_coordinates);
-						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight, new_edge_weights); 
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight - used_weight, new_edge_weights); 
 					}
 				}
 			}
 		}
 		else if(shelling_num == 1){
-			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
 						new_vertices = polygon.vertex_coordinates;
 						new_vertex_coordinates = vertex_coordinates;
+						vector<vector<int>> new_edge_weights = edge_weights;
+						new_edge_weights[shelling_order[shelling_num]] = current_vertex_edge_lengths;
 						for(auto& coordinate:new_vertices){
 							coordinate.insert(coordinate.begin(),0); 
 						}
@@ -329,17 +358,19 @@ class Triangulation{
 							new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 						}
 						print_dictionary(new_vertex_coordinates);
-						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, new_edge_weights);
 					}
 				}
 			}
 
 		}
 		else if(shelling_num == 2){
-			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
 						new_vertex_coordinates = vertex_coordinates;
+						vector<vector<int>> new_edge_weights = edge_weights;
+						new_edge_weights[shelling_order[shelling_num]] = current_vertex_edge_lengths;
 						int y_length = polygon.edge_lengths[0];
 						int x_length = polygon.edge_lengths[polygon.edge_lengths.size() - 1];
 						new_vertices = polygon.Affine_Transf({0, 0, 0}, {0, 0, x_length}, {y_length, 0, 0} );
@@ -352,17 +383,19 @@ class Triangulation{
 						}
 						print_dictionary(new_vertex_coordinates);
 						cout << "Finished with the first three faces" << "\n";
-						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
+						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, new_edge_weights);
 					}
 
 				}
 			}
 		}
 		else{
-			for(auto& current_vertex_edge_lengths:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
+			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
 						new_vertex_coordinates = {};
+						vector<vector<int>> new_edge_weights = edge_weights;
+						new_edge_weights[shelling_order[shelling_num]] = current_vertex_edge_lengths;
 						int end = polygon.number_vertices - 1;
 						vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
 						vector<int> x_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][end], adjacencies[shelling_order[shelling_num]][end-1]}];
@@ -376,7 +409,7 @@ class Triangulation{
 						if(mergable(new_vertex_coordinates, vertex_coordinates)){
 							new_vertex_coordinates.merge(vertex_coordinates);
 							print_dictionary(new_vertex_coordinates);
-							build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, edge_weights);
+							build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight, new_edge_weights);
 						}
 					}
 				}
@@ -504,7 +537,6 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-
 
     
 	read_polygon_DB();

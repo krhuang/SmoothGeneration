@@ -15,6 +15,7 @@ void print_vector(const vector<int>& input_vect);
 void print_matrix(const vector<vector<int>>& input_matrix);
 void print_dictionary(const map<set<int>, vector<int>>& dictionary);
 vector<int> matrix_multiply(vector<vector<int>> matrix, vector<int> vect);
+void increment_one(vector<int>& vect);
 vector<vector<int>> matrix_inverse(vector<vector<int>> matrix);
 vector<int> divide_vector(vector<int> input_vector, int mod_factor);
 vector<int> add_vector(vector<int> first_summand_vector, vector<int> second_summand_vector);

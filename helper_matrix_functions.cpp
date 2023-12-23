@@ -53,6 +53,12 @@ vector<vector<int>> matrix_inverse(vector<vector<int>> matrix) {
     return {{matrix[1][1], -matrix[0][1]}, {-matrix[1][0], matrix[0][0]}};
 }
 
+void increment_one(vector<int>& input_vector) {
+    for(int i = 0; i < input_vector.size(); i++){
+        input_vector[i]++;
+    }
+}
+
 vector<int> divide_vector(vector<int> input_vector, int mod_factor) {
     for (int i = 0; i < input_vector.size(); i++) {
         if (input_vector[i] % mod_factor != 0) {
