@@ -228,6 +228,21 @@ class Triangulation{
 			current_vertex++;
 		}
 	}
+
+	void invert_shelling(){
+		vector<vector<int>> new_adjacencies;
+		for(int shelling_num = 0; shelling_num < number_vertices; shelling_num++){
+			vector<int> new_adjacency = adjacencies[shelling_order[shelling_num]];
+			for(int i = 0; i < new_adjacency.size(); i++){
+				new_adjacency[i] = shelling_order_inverse[new_adjacency[i]];
+			}
+			new_adjacencies.push_back(new_adjacency);
+		}
+		adjacencies = new_adjacencies;
+		for(int shelling_num = 0; shelling_num < number_vertices; shelling_num++){
+			shelling_order[shelling_num] = shelling_num;
+		}
+	}
 	//Returns the degree of a particular vertex
 	int vertex_degree(int vertex_number){ 
 		return adjacencies[vertex_number].size();
@@ -297,6 +312,7 @@ class Triangulation{
 		compute_a_shelling();
 		rotate_adjacencies();
 		compute_shelling_inverse();
+		invert_shelling();
 		//build_polytopes(); with many different edge lengths
 		vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
 		print();
