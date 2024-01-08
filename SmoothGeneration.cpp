@@ -272,38 +272,42 @@ class Triangulation{
 		//Iterate through neighbors of the current vertex
 		
 		vector<int> previous_weight;
-		/*
-		for(int neighbor = 0; neighbor < adjacencies[shelling_order[shelling_num]].size(); neighbor++){
-			//If this neighbor came before in the shelling order
-			if ( shelling_order_inverse[adjacencies[shelling_order[shelling_num]][neighbor]] < shelling_order[shelling_num] ) {
-				cout << neighbor  << " K" << endl;
-				//iterate through the neighbors of "neighbor"
-				for(int adjacency = 0; adjacency < adjacencies[neighbor].size(); adjacency++){
-					if (adjacencies[neighbor][adjacency] == shelling_order[shelling_num]){
-						previous_weight.push_back(edge_weights[neighbor][adjacency]);
-						break;
+		int used_weight = 0;
+		int num_previous_neighbors = 0; 
+		int prev_neighbor;
+		map<int, int> previous_edge_weight_map;
+		for(int adjacency_index = 0; adjacency_index < adjacencies[shelling_num].size(); adjacency_index++){
+			prev_neighbor = adjacencies[shelling_num][adjacency_index];
+			if(prev_neighbor < shelling_num){
+				//Increment the counter
+				num_previous_neighbors++;
+				//Record the already-assigned edge-weight, and its index, into a dictionary
+				//First find the edge weight
+				for(int i = 0; i < edge_weights[prev_neighbor].size(); i++){
+					if(adjacencies[prev_neighbor][i] == shelling_num){
+						previous_edge_weight_map[adjacency_index] = edge_weights[prev_neighbor][i];
+						cout << "Currently on shelling num " << shelling_num << endl;
+						cout << adjacency_index << " => " << edge_weights[prev_neighbor][i] << endl;
 					}
 				}
 			}
-
-			else{
-				//Make the weight 0 (unassigned)
-				previous_weight.push_back(0);
-			}
 		}
-		print_vector(previous_weight);
-		for(int i = 0; i < previous_weight.size(); i++){
-			previous_weight[i] = 1;
-		}*/
 		
 		vector <pair<vector<int>, int>> result;
-		for (vector<int> partition:balls_and_boxes(0,4)){
+		for (vector<int> partition:balls_and_boxes(1,adjacencies[shelling_num].size() - num_previous_neighbors)){
+			//Increments weights by one (eliminates 0s)
 			increment_one(partition);
-			//cout << "balls boxes partition after incrementing by one" << endl;
-			//print_vector(partition);
-			cout << endl;
+			//Then insert previous weights which have already been decided
+			map<int,int>::iterator it;
+			for(it = previous_edge_weight_map.begin(); it != previous_edge_weight_map.end(); it++){
+				cout << it->first << it->second << endl;
+				partition.insert(partition.begin() + it->first, it->second);
+				//print_vector(partition);
+				//partition.push_back(1);
+			}
 			result.push_back(make_pair(partition, 0));
 		}
+		cout << "Found " << num_previous_neighbors << " previous neighbors" << endl;
 		return result;
 	}
 
