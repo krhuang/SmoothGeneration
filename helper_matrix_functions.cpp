@@ -91,10 +91,13 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
     return difference_vector;
 }
 
+//TODO:fix this without the copy functionality
 bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2) {
-    map1.insert(map2.begin(), map2.end());
-    map2.insert(map1.begin(), map1.end());
-    if (map1 == map2) {
+    map<set<int>,vector<int>> map1_copy = map1;
+    map<set<int>,vector<int>> map2_copy = map2;   
+    map1_copy.insert(map2_copy.begin(), map2_copy.end());
+    map2_copy.insert(map1_copy.begin(), map1_copy.end());
+    if (map1_copy == map2_copy) {
         return true;
     }
     cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << "\n";
