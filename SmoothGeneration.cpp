@@ -7,35 +7,50 @@
 #include <numeric>
 #include <algorithm>
 #include <map>
+#include <chrono>
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 
+double affine_transformation_time;
+double dictionary_merge_check_time;
+double balls_and_boxes_generation_time;
+double edge_length_allocation_time;
+double checking_polygon_length_equality_time;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 12;
+const int MAX_LATTICE_POINTS = 16;
 
 
 //Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
-void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<vector<int>>& result){
+void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
 	
 
-	if (current.size() == boxes){
-		result.push_back(current);
+	if ( (int) current.size() == boxes){
+		result.push_back(make_pair(current, used_weight));
 		return;
 	}
 
 	for (int i = 0; i <= balls; i++){
 		current.push_back(i);
-		balls_and_boxes_helper(balls - i, boxes, current, result);
+		balls_and_boxes_helper(balls - i, boxes, current, result, used_weight+i);
 		current.pop_back();
 	}
 }
 
-vector<vector<int>> balls_and_boxes(int balls, int boxes){
-	vector<vector<int>> result;
+vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
+	auto start_time = std::chrono::high_resolution_clock::now();
+
+	vector<pair<vector<int>, int>> result;
 	vector<int> current;
 
-	balls_and_boxes_helper(balls, boxes, current, result);
+	balls_and_boxes_helper(balls, boxes, current, result, 0);
 
+
+	// Stop measuring time
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+   	// Calculate duration in seconds
+    auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    balls_and_boxes_generation_time += duration.count();
 	return result;
 }
 
@@ -47,7 +62,7 @@ vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
 	//>3 1 2 
 	vector<int> edge_lengths;
 	vector<int> difference;
-	for(int i=0; i<vertex_coordinates.size()-1; i++){
+	for(int i=0; i< (int) vertex_coordinates.size()-1; i++){
 		difference = subtract_vector(vertex_coordinates[i+1], vertex_coordinates[i]);
 		edge_lengths.push_back(gcd(difference[0], difference[1]));
 	}
@@ -106,6 +121,8 @@ public:
 
 	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
 		//returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
+		
+		auto start_time = std::chrono::high_resolution_clock::now();
 		vector <int> translation_vector = origin_destination;
 		vector<vector<int>> new_vertices;
 		int y_length = edge_lengths[0];
@@ -113,10 +130,20 @@ public:
 		vector<int> first_col = divide_vector(subtract_vector(x_destination, translation_vector), x_length);
 		vector<int> second_col = divide_vector(subtract_vector(y_destination, translation_vector), y_length);
 		vector<vector<int>> lin_transform_matrix = {first_col, second_col}; 
-		for(int i=0; i<edge_lengths.size(); i++){
+		for(int i=0; i< (int) edge_lengths.size(); i++){
 			new_vertices.push_back(add_vector(matrix_multiply(lin_transform_matrix, vertex_coordinates[i]), translation_vector));
 		}
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		 	// Calculate duration in seconds
+    	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    	affine_transformation_time = affine_transformation_time + duration.count();
+
 		return new_vertices; 
+
+
+    	// Stop measuring time
+    	
 	}
 
 	//Takes a Smooth_Polygon object, and rotates its embedding, so that a new vertex is the origin. 
@@ -160,7 +187,7 @@ class Triangulation{
 		{
 			//edge_weights = adjacencies;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
-				for(int adjacency = 0; adjacency< adjacencies[vertex].size(); adjacency++){
+				for(int adjacency = 0; adjacency< (int) adjacencies[vertex].size(); adjacency++){
 					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
 				}
@@ -175,7 +202,7 @@ class Triangulation{
 	vector<vector<int>> initial_edge_lengths(){
 		vector<vector<int>> edge_weights = adjacencies; 
 		for(int vertex = 0; vertex < number_vertices; vertex++){
-			for(int adjacency = 0; adjacency< adjacencies[vertex].size(); adjacency++){
+			for(int adjacency = 0; adjacency< (int) adjacencies[vertex].size(); adjacency++){
 				edge_weights[vertex][adjacency] = 0;	
 			}
 		}
@@ -184,7 +211,7 @@ class Triangulation{
 
 	void compute_a_shelling(){
 		shelling_order.push_back(0); 
-		for(int i = 0; shelling_order.size() < number_vertices; i++){
+		for(int i = 0; (int) shelling_order.size() < number_vertices; i++){
 			int current_vertex = shelling_order[i];
 			//int j = adjacencies[current_vertex].size()-1;
 			for(int j = adjacencies[current_vertex].size()-1; j >= 0; j--){ //going clockwise through the adjacencies of the current vertex
@@ -196,7 +223,7 @@ class Triangulation{
 	}
 
 	void compute_shelling_inverse(){
-		for(int i = 0; i < shelling_order.size(); i++){
+		for(int i = 0; i < (int) shelling_order.size(); i++){
 			shelling_order_inverse[shelling_order[i]] = i;
 		}
 	}
@@ -233,7 +260,7 @@ class Triangulation{
 		vector<vector<int>> new_adjacencies;
 		for(int shelling_num = 0; shelling_num < number_vertices; shelling_num++){
 			vector<int> new_adjacency = adjacencies[shelling_order[shelling_num]];
-			for(int i = 0; i < new_adjacency.size(); i++){
+			for(int i = 0; i < (int) new_adjacency.size(); i++){
 				new_adjacency[i] = shelling_order_inverse[new_adjacency[i]];
 			}
 			new_adjacencies.push_back(new_adjacency);
@@ -270,20 +297,19 @@ class Triangulation{
 	vector <pair<vector<int>, int>> edge_length_allocations(int shelling_num, int remaining_weight, const vector<vector<int>>& edge_weights){
 		//Fill in edge weights
 		//Iterate through neighbors of the current vertex
-		
+		auto start_time = std::chrono::high_resolution_clock::now();
 		vector<int> previous_weight;
-		int used_weight = 0;
 		int num_previous_neighbors = 0; 
 		int prev_neighbor;
 		map<int, int> previous_edge_weight_map;
-		for(int adjacency_index = 0; adjacency_index < adjacencies[shelling_num].size(); adjacency_index++){
+		for(int adjacency_index = 0; adjacency_index < (int) adjacencies[shelling_num].size(); adjacency_index++){
 			prev_neighbor = adjacencies[shelling_num][adjacency_index];
 			if(prev_neighbor < shelling_num){
 				//Increment the counter
 				num_previous_neighbors++;
 				//Record the already-assigned edge-weight, and its index, into a dictionary
 				//First find the edge weight
-				for(int i = 0; i < edge_weights[prev_neighbor].size(); i++){
+				for(int i = 0; i < (int) edge_weights[prev_neighbor].size(); i++){
 					if(adjacencies[prev_neighbor][i] == shelling_num){
 						previous_edge_weight_map[adjacency_index] = edge_weights[prev_neighbor][i];
 						//cout << "Currently on shelling num " << shelling_num << endl;
@@ -294,7 +320,7 @@ class Triangulation{
 		}
 		
 		vector <pair<vector<int>, int>> result;
-		for (vector<int> partition:balls_and_boxes(0,adjacencies[shelling_num].size() - num_previous_neighbors)){
+		for (auto& [partition, used_weight]:balls_and_boxes(remaining_weight,adjacencies[shelling_num].size() - num_previous_neighbors)){
 			//Increments weights by one (eliminates 0s)
 			increment_one(partition);
 			//Then insert previous weights which have already been decided
@@ -307,9 +333,14 @@ class Triangulation{
 				//partition.push_back(1);
 			}
 			//print_vector(partition);
-			result.push_back(make_pair(partition, 0));
+			result.push_back(make_pair(partition, used_weight));
 		}
 		//cout << "Found " << num_previous_neighbors << " previous neighbors" << endl;
+		auto end_time = std::chrono::high_resolution_clock::now();
+
+    	// Calculate duration in seconds
+    	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    	edge_length_allocation_time += duration.count();
 		return result;
 	}
 
@@ -321,7 +352,13 @@ class Triangulation{
 		//build_polytopes(); with many different edge lengths
 		vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
 		print();
+		auto start_time = std::chrono::high_resolution_clock::now();
 		build_polytopes_edge_weights_test({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
+		auto end_time = std::chrono::high_resolution_clock::now();
+
+    	// Calculate duration in seconds
+    	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    	cout << "Time taken on building all polytopes: " << duration.count() << " seconds" << endl;
 	}
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
@@ -334,10 +371,11 @@ class Triangulation{
 	
 		int used_weight = 0;
 		if(remaining_weight < 0){
-			cout << "Error! Somehow went below 0 remaining_weight!" << endl;
+			cout << "Went below 0 remaining_weight!" << endl;
 		}
-		if(shelling_num == number_vertices){
+		else if(shelling_num == number_vertices){
 			cout << "Finished iterating through the triangulation" << "\n";
+			print_dictionary(vertex_coordinates);
 		}
 		else if(shelling_num == 0){
 			for(auto& [current_vertex_edge_lengths,used_weight] : edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
@@ -353,11 +391,10 @@ class Triangulation{
 						int end = adjacencies[0].size();
 						int neighbor;
 						int prev;
-						cout << "K" << endl;
 						for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
 							new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 						}
-						print_dictionary(new_vertex_coordinates);
+						//print_dictionary(new_vertex_coordinates);
 						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight - used_weight, new_edge_weights); 
 					}
 				}
@@ -380,7 +417,7 @@ class Triangulation{
 						for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
 							new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 						}
-						print_dictionary(new_vertex_coordinates);
+						//print_dictionary(new_vertex_coordinates);
 						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight, new_edge_weights);
 					}
 				}
@@ -404,8 +441,8 @@ class Triangulation{
 						for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
 							new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
 						}
-						print_dictionary(new_vertex_coordinates);
-						cout << "Finished with the first three faces" << "\n";
+						//print_dictionary(new_vertex_coordinates);
+						//cout << "Finished with the first three faces" << "\n";
 						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight, new_edge_weights);
 					}
 
@@ -413,30 +450,49 @@ class Triangulation{
 			}
 		}
 		else{
+			auto start_time = std::chrono::high_resolution_clock::now();
 			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB){
 					if(current_vertex_edge_lengths == polygon.edge_lengths){
+						auto end_time = std::chrono::high_resolution_clock::now();
+						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+						checking_polygon_length_equality_time += duration.count();
+						start_time = std::chrono::high_resolution_clock::now();
 						new_vertex_coordinates = {};
 						vector<vector<int>> new_edge_weights = edge_weights;
 						new_edge_weights.push_back(current_vertex_edge_lengths);
 						map<set<int>, vector<int>> vertex_coordinates_copy = vertex_coordinates;
 						int end = polygon.number_vertices - 1;
-						vector<int> origin_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][end]}];
-						vector<int> x_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][end], adjacencies[shelling_order[shelling_num]][end-1]}];
-						vector<int> y_destination = vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][0], adjacencies[shelling_order[shelling_num]][1]}];
+						vector<int> origin_destination = vertex_coordinates[{shelling_num, adjacencies[shelling_num][0], adjacencies[shelling_num][end]}];
+						vector<int> x_destination = vertex_coordinates[{shelling_num, adjacencies[shelling_num][end], adjacencies[shelling_num][end-1]}];
+						vector<int> y_destination = vertex_coordinates[{shelling_num, adjacencies[shelling_num][0], adjacencies[shelling_num][1]}];
 						new_vertices = polygon.Affine_Transf(origin_destination, x_destination, y_destination);
-						//print_matrix(new_vertices);
+						//Record the new_vertices into the dictionary
 						for(int i = 0, prev = end; i < polygon.number_vertices; prev = i, i++){
-							new_vertex_coordinates[{shelling_order[shelling_num], adjacencies[shelling_order[shelling_num]][i], adjacencies[shelling_order[shelling_num]][prev]}] = new_vertices[i];
+							new_vertex_coordinates[{shelling_num, adjacencies[shelling_num][i], adjacencies[shelling_num][prev]}] = new_vertices[i];
 						}
-						cout << "On shelling number " << shelling_num << endl;
 						//print_dictionary(new_vertex_coordinates);
+						auto start_time = std::chrono::high_resolution_clock::now();
 						if(mergable(new_vertex_coordinates, vertex_coordinates_copy)){
 							new_vertex_coordinates.merge(vertex_coordinates_copy);
-							cout << "Post-merger" << endl;
-							print_dictionary(new_vertex_coordinates);
+							// Stop measuring time
+    						auto end_time = std::chrono::high_resolution_clock::now();
+
+   							// Calculate duration in seconds
+    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    						dictionary_merge_check_time += duration.count();
 							build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight, new_edge_weights);
 						}
+						else{
+
+							// Stop measuring time
+    						auto end_time = std::chrono::high_resolution_clock::now();
+
+   							// Calculate duration in seconds
+    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+    						dictionary_merge_check_time+= duration.count();
+						}
+
 					}
 				}
 			}
@@ -567,8 +623,19 @@ int main(){
     
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
-	clock_t tStart = clock();
+	auto start_time = std::chrono::high_resolution_clock::now();
+
 	cubeexample();
-	cout << "Time taken: \n" << (double)(clock()-tStart)/CLOCKS_PER_SEC << "\n";
+	// Stop measuring time
+    auto end_time = std::chrono::high_resolution_clock::now();
+
+   	// Calculate duration in seconds
+    auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
+	cout << "Time taken: " << duration.count() << "\n";
+	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << endl;
+	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << endl;
+	cout << "Time taken generating balls and boxes partitions: " << balls_and_boxes_generation_time << " seconds" << endl;
+	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << endl;
+	cout << "Time spent checking polygon length equalities: " << checking_polygon_length_equality_time << endl;
 
 }
