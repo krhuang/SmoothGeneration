@@ -16,10 +16,8 @@ double affine_transformation_time;
 double dictionary_merge_check_time;
 double balls_and_boxes_generation_time;
 double edge_length_allocation_time;
-double checking_polygon_length_equality_time;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 16;
-
+const int MAX_LATTICE_POINTS = 20;
 
 //Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
 void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
@@ -56,7 +54,7 @@ vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
 }
 
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
-vector<int> compute_edge_lengths(vector<vector<int>> vertex_coordinates){
+vector<int> compute_edge_lengths(const vector<vector<int>>& vertex_coordinates){
 	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
 	//Example:
 	//>print_vector({{0, 0}, {0, 3}, {2,0}})
@@ -447,14 +445,9 @@ class Triangulation{
 			}
 		}
 		else{
-			auto start_time = std::chrono::high_resolution_clock::now();
 			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB[current_vertex_edge_lengths]){
 					assert(current_vertex_edge_lengths == polygon.edge_lengths);
-					auto end_time = std::chrono::high_resolution_clock::now();
-					auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-					checking_polygon_length_equality_time += duration.count();
-					start_time = std::chrono::high_resolution_clock::now();
 					new_vertex_coordinates = {};
 					vector<vector<int>> new_edge_weights = edge_weights;
 					new_edge_weights.push_back(current_vertex_edge_lengths);
@@ -476,7 +469,7 @@ class Triangulation{
     					auto end_time = std::chrono::high_resolution_clock::now();
    							// Calculate duration in seconds
    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-   						dictionary_merge_check_time += duration.count();
+						dictionary_merge_check_time += duration.count();
 						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight, new_edge_weights);
 					}
 					else{
@@ -484,8 +477,8 @@ class Triangulation{
    						auto end_time = std::chrono::high_resolution_clock::now();
    							// Calculate duration in seconds
    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-   						dictionary_merge_check_time+= duration.count();
-					}			
+						dictionary_merge_check_time += duration.count();
+					}
 				}
 			}
 		}
@@ -612,7 +605,6 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-
     
 	read_polygon_DB();
 	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
@@ -629,6 +621,5 @@ int main(){
 	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << endl;
 	cout << "Time taken generating balls and boxes partitions: " << balls_and_boxes_generation_time << " seconds" << endl;
 	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << endl;
-	cout << "(Approximate) Time spent checking polygon length equalities: " << checking_polygon_length_equality_time << endl;
 
 }

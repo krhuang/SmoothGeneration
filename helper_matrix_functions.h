@@ -8,8 +8,10 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <cassert>
 
 using namespace std;
+using MyMap = map<set<int>, vector<int>>;
 
 bool element_of_vector(int num, const vector<int>& vect);
 void print_vector(const vector<int>& input_vect);
@@ -21,6 +23,8 @@ vector<vector<int>> matrix_inverse(vector<vector<int>> matrix);
 vector<int> divide_vector(vector<int> input_vector, int mod_factor);
 vector<int> add_vector(vector<int> first_summand_vector, vector<int> second_summand_vector);
 vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_vector);
-bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2);
+vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coordinates);
+bool mergable(MyMap const& a, MyMap const& b);
+
 
 #endif // HELPER_MATRIX_FUNCTIONS_H

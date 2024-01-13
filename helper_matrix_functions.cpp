@@ -32,7 +32,7 @@ void print_dictionary(const map<set<int>, vector<int>>& dictionary) {
         }
         cout << "=> ";
         for (const auto& iter : value) {
-            cout << iter;
+            cout << iter << " ";
         }
         cout << "\n";
     }
@@ -61,9 +61,8 @@ void increment_one(vector<int>& input_vector) {
 
 vector<int> divide_vector(vector<int> input_vector, int mod_factor) {
     for (int i = 0; i < input_vector.size(); i++) {
-        if (input_vector[i] % mod_factor != 0) {
-            cout << "Unclean division warning!" << "\n";
-        }
+        //Checks for the possibility of a weird division occurring 
+        assert(input_vector[i] == 0 || input_vector[i] % mod_factor == 0);
         input_vector[i] = input_vector[i] / mod_factor;
     }
     return input_vector;
@@ -91,14 +90,37 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
     return difference_vector;
 }
 
-//TODO:fix this without the copy functionality
-bool mergable(map<set<int>, vector<int>> map1, map<set<int>, vector<int>> map2) {
-    // Start measuring time
-    map1.insert(map2.begin(), map2.end());
-    map2.insert(map1.begin(), map1.end());
-    if (map1 == map2) {
-        return true;
+//This implementation in O(max(n, m)) is from this SE thread: https://stackoverflow.com/questions/77809818/checking-two-stdmap-with-some-shared-keys-if-overlapping-keys-map-to-the-same/77809920?noredirect=1#comment137173196_77809920
+bool mergable(MyMap const& a, MyMap const& b) {
+    auto aIt = a.begin();
+    auto bIt = b.begin();
+
+    while (aIt != a.end() && bIt != b.end()) {
+        if (aIt->first < bIt->first) {
+            // a's key is less than b's key -> move to a's next entry
+            ++aIt;
+        } else if (bIt->first < aIt->first) {
+            // b's key is less than a's key -> move to b's next entry
+            ++bIt;
+        } else {
+            // the keys are equal -> make sure the values are equal...
+            if (aIt->second != bIt->second) {
+                return false; // value mismatch -> not mergable
+            }
+            // ...and advance to next entry of a and b
+            ++aIt;
+            ++bIt;
+        }
     }
-    cout << "Dictionaries not combinable: vertex assignment does not line up (not an error)" << "\n";
-    return false;
+
+    return true; // no mismatches found -> maps are mergable
+}
+
+
+vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coordinates){
+    vector<vector<int>> result;
+    for(int vector_index = 0; vector_index < vertex_coordinates.size(); vector_index++){
+        result.push_back({vertex_coordinates[vector_index][1], vertex_coordinates[vector_index][0]});
+    }
+    return result;
 }
