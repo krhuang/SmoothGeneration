@@ -14,10 +14,10 @@ using namespace std;
 
 double affine_transformation_time;
 double dictionary_merge_check_time;
-double balls_and_boxes_generation_time;
 double edge_length_allocation_time;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
 const int MAX_LATTICE_POINTS = 20;
+int polytopes_produced = 0;
 
 //Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
 void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
@@ -36,20 +36,9 @@ void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<p
 }
 
 vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
-	auto start_time = std::chrono::high_resolution_clock::now();
-
 	vector<pair<vector<int>, int>> result;
 	vector<int> current;
-
 	balls_and_boxes_helper(balls, boxes, current, result, 0);
-
-
-	// Stop measuring time
-    auto end_time = std::chrono::high_resolution_clock::now();
-
-   	// Calculate duration in seconds
-    auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-    balls_and_boxes_generation_time += duration.count();
 	return result;
 }
 
@@ -199,7 +188,7 @@ class Triangulation{
 		}
 	//Computes an arbitrary shelling order on the triangulation
 	//Here a shelling requires that the first three vertices form a triangle, and that every new vertex thereafter must form a triangle with two of the previous vertices of the shelling
-	
+	/*
 	vector<vector<int>> initial_edge_lengths(){
 		vector<vector<int>> edge_weights = adjacencies; 
 		for(int vertex = 0; vertex < number_vertices; vertex++){
@@ -209,6 +198,7 @@ class Triangulation{
 		}
 		return edge_weights;
 	}
+	*/
 
 	void compute_a_shelling(){
 		shelling_order.push_back(0); 
@@ -351,12 +341,11 @@ class Triangulation{
 		compute_shelling_inverse();
 		invert_shelling();
 		//build_polytopes(); with many different edge lengths
-		vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
+		//vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
 		print();
 		auto start_time = std::chrono::high_resolution_clock::now();
 		build_polytopes_edge_weights_test({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
 		auto end_time = std::chrono::high_resolution_clock::now();
-
     	// Calculate duration in seconds
     	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
     	cout << "Time taken on building all polytopes: " << duration.count() << " seconds" << endl;
@@ -619,7 +608,6 @@ int main(){
 	cout << "Time taken: " << duration.count() << "\n";
 	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << endl;
 	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << endl;
-	cout << "Time taken generating balls and boxes partitions: " << balls_and_boxes_generation_time << " seconds" << endl;
 	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << endl;
 
 }
