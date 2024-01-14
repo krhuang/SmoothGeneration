@@ -16,13 +16,18 @@ double affine_transformation_time;
 double dictionary_merge_check_time;
 double edge_length_allocation_time;
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 20;
-int polytopes_produced = 0;
+const int MAX_LATTICE_POINTS = 24;
+int polytopes_produced;
+int affine_transformations_done;
+int triangulations; 
+
+//Outputs the produced polytopes to a file
+void output_polytope(int number_vertices, map<set<int>, vector<int>>){
+	cout << "outputting polytope" << endl;
+}
 
 //Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
 void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
-	
-
 	if ( (int) current.size() == boxes){
 		result.push_back(make_pair(current, used_weight));
 		return;
@@ -109,7 +114,7 @@ public:
 
 	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
 		//returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
-		
+		affine_transformations_done++;
 		auto start_time = std::chrono::high_resolution_clock::now();
 		vector <int> translation_vector = origin_destination;
 		vector<vector<int>> new_vertices;
@@ -230,7 +235,6 @@ class Triangulation{
 		while(adjacencies[shelling_order[0]][0] != shelling_order[1]){
 			rotate(adjacencies[shelling_order[0]].begin(), adjacencies[shelling_order[0]].begin() + 1, adjacencies[shelling_order[0]].end());
 		}
-
 		while(adjacencies[shelling_order[1]][0] != shelling_order[2]){
 			rotate(adjacencies[shelling_order[1]].begin(), adjacencies[shelling_order[1]].begin() + 1, adjacencies[shelling_order[1]].end());
 		}
@@ -238,11 +242,11 @@ class Triangulation{
 			rotate(adjacencies[shelling_order[2]].begin(), adjacencies[shelling_order[2]].begin() + 1, adjacencies[shelling_order[2]].end());
 		}
 		while(rebuilt_shelling != shelling_order){
-			int current_vertex = rebuilt_shelling.size();
+			int current_vertex = shelling_order[rebuilt_shelling.size()];
 			while((element_of_vector(adjacencies[current_vertex][0], rebuilt_shelling) && element_of_vector(adjacencies[current_vertex][adjacencies[current_vertex].size()-1], rebuilt_shelling)) == false){
 				rotate(adjacencies[current_vertex].begin(), adjacencies[current_vertex].begin()+1, adjacencies[current_vertex].end()); 
 			}
-			rebuilt_shelling.push_back(shelling_order[current_vertex]);
+			rebuilt_shelling.push_back(current_vertex);
 			current_vertex++;
 		}
 	}
@@ -342,13 +346,13 @@ class Triangulation{
 		invert_shelling();
 		//build_polytopes(); with many different edge lengths
 		//vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
-		print();
+		//print();
 		auto start_time = std::chrono::high_resolution_clock::now();
 		build_polytopes_edge_weights_test({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
 		auto end_time = std::chrono::high_resolution_clock::now();
     	// Calculate duration in seconds
     	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-    	cout << "Time taken on building all polytopes: " << duration.count() << " seconds" << endl;
+    	//cout << "Time taken on building all polytopes: " << duration.count() << " seconds" << endl;
 	}
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
@@ -364,8 +368,10 @@ class Triangulation{
 			cout << "Went below 0 remaining_weight!" << endl;
 		}
 		else if(shelling_num == number_vertices){
-			cout << "Finished iterating through the triangulation" << "\n";
+			cout << "Finished iterating through the triangulation" << endl;
 			print_dictionary(vertex_coordinates);
+			output_polytope(smooth_polytope_vertex_count, vertex_coordinates);
+			polytopes_produced++;
 		}
 		else if(shelling_num == 0){
 			for(auto& [current_vertex_edge_lengths,used_weight] : edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
@@ -506,26 +512,42 @@ void cubeexample(){
 
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
-	ifstream fin(input_file_name);
+	//Check that the first 15 characters is >>planar_code<<
+	ifstream plantri_in(input_file_name);
+	char input_char;
+	string planar_code_header;
+	for(int i = 0; i < 15; i++){
+		plantri_in >> input_char;
+		planar_code_header += input_char;
+	}
+	assert(planar_code_header == ">>planar_code<<");
+
+
 	int number_vertices;
-	while(fin >> number_vertices){
+	//Reads the next integer as a char, then casts it into an integer. I tried to read it as a hex but this didn't work, and I'm not sure why
+	while(plantri_in.peek() != EOF){
+		int current_vertex = 0;
+		input_char = plantri_in.get();
+		number_vertices = static_cast<int>(input_char); 
 		//Read a PLANTRI CODE-style triangulation of the file, putting the adjacencies into "adjacencies"
 		//Warning! PLANTRI CODE indexes from 1, see the below example from the appendix 
 		//5  3 4 0  3 5 0  1 4 5 2 0  1 5 3 0  2 3 4 0
-		vector<vector<int>> adjacencies;
+		vector<vector<int>> adjacencies(number_vertices);
 		int neighbor;
-		int current_vertex = 0;
 		while(current_vertex < number_vertices){
-			fin >> neighbor;
+			input_char = plantri_in.get();
+			neighbor = static_cast<int>(input_char);
 			if(neighbor == 0){
-				current_vertex++;
+				current_vertex++; //Hitting a 0 means it's the end of the adjacencies of that vertex
 			}
 			else{
-				adjacencies[current_vertex].push_back(neighbor - 1);
+				adjacencies[current_vertex].push_back(neighbor - 1); //Add the number to the adjacencies, but translating conventions (PLANAR CODE indexes from 1)
 			}
 		}
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
 		new_Triangulation.build_all_polytopes();
+		triangulations++;
+		cout << triangulations << endl;
 	}
 }
 
@@ -594,12 +616,14 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
+	string input_plantri_file;
+	input_plantri_file = "plantri_output14"; 
     
 	read_polygon_DB();
-	cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
+	//cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	auto start_time = std::chrono::high_resolution_clock::now();
-
-	cubeexample();
+	read_plantri_triangulation(input_plantri_file); 
+	//cubeexample();
 	// Stop measuring time
     auto end_time = std::chrono::high_resolution_clock::now();
 
@@ -609,5 +633,6 @@ int main(){
 	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << endl;
 	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << endl;
 	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << endl;
-
+	cout << polytopes_produced << " smooth 3-polytopes were produced" << endl;
+	cout << affine_transformations_done << " affine transformations" << endl;
 }
