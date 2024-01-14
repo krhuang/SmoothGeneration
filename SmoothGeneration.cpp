@@ -12,21 +12,42 @@
 #include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 
+//The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
+const int MAX_LATTICE_POINTS = 20;
+
+//Various analytics for understanding the programs runtime/output
 double affine_transformation_time;
 double dictionary_merge_check_time;
 double edge_length_allocation_time;
-//The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 24;
 int polytopes_produced;
 int affine_transformations_done;
 int triangulations; 
 
 //Outputs the produced polytopes to a file
-void output_polytope(int number_vertices, map<set<int>, vector<int>>){
-	cout << "outputting polytope" << endl;
+//It should take the format
+//First number if the #vertices
+//Each row thereafter is a vertex in Z^3
+// 6
+// 0 0 0
+// 1 0 0 
+// 0 1 0
+// 0 0 1
+// 1 1 0
+// 0 1 1
+// 1 0 1
+// 1 1 1
+void output_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
+	cout << "Outputting polytope" << endl;
+	cout << number_vertices << endl;
+	for (const auto& [key, value] : vertex_dictionary) {
+        for (const auto& iter : value) {
+            cout << iter << " ";
+        }
+        cout << "\n";
+    }
 }
 
-//Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
+//A helper function for balls_and_boxes
 void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
 	if ( (int) current.size() == boxes){
 		result.push_back(make_pair(current, used_weight));
@@ -40,6 +61,7 @@ void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<p
 	}
 }
 
+//Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
 vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
 	vector<pair<vector<int>, int>> result;
 	vector<int> current;
@@ -48,6 +70,7 @@ vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
 }
 
 //Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
+//This could be part of the initialization? 
 vector<int> compute_edge_lengths(const vector<vector<int>>& vertex_coordinates){
 	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
 	//Example:
@@ -84,15 +107,16 @@ vector<vector<int>> standard_position(vector<vector<int>> vertex_coordinates){
 class Smooth_Polygon{
 public:
 	int number_vertices{ 0 };
-	int number_interior_lattice_points{ 0 };
+	int number_interior_lattice_points{ 0 }; //This should be computed using i.e. Polymake, and be part of the file from which the smooth polygons are read
 	vector<int> edge_lengths{  }; //Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
 	vector<vector<int>> vertex_coordinates{}; //Vertex coordinates
 
-	//Default constructor
+	//Constructor
 	Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
 		: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
 	{}
 
+	//Comparison operator so we can have ordered sets of Smooth Polygons
 	bool operator<(const Smooth_Polygon& other) const {
 		return vertex_coordinates < other.vertex_coordinates;
 	}
@@ -112,10 +136,14 @@ public:
 		}
 	}
 
+	//Returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
+	//For embedding polygons in 3-space, as the facets of a polytope
 	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
-		//returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
-		affine_transformations_done++;
-		auto start_time = std::chrono::high_resolution_clock::now();
+		
+		affine_transformations_done++; //Runtime analytics
+		auto start_time = std::chrono::high_resolution_clock::now(); //Runtime analytics
+		
+
 		vector <int> translation_vector = origin_destination;
 		vector<vector<int>> new_vertices;
 		int y_length = edge_lengths[0];
@@ -128,15 +156,12 @@ public:
 		}
 
 		auto end_time = std::chrono::high_resolution_clock::now();
-		 	// Calculate duration in seconds
     	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
     	affine_transformation_time = affine_transformation_time + duration.count();
+		
 
 		return new_vertices; 
 
-
-    	// Stop measuring time
-    	
 	}
 
 	//Takes a Smooth_Polygon object, and rotates its embedding, so that a new vertex is the origin. 
@@ -162,20 +187,17 @@ public:
 map<vector<int>, set<Smooth_Polygon>> Smooth_Polygon_DB;
 
 //Triangulations, usually given by plantri in text form. 
-//Each triangulation has [number_vertices] vertices and its edges are given clockwise
+//Each triangulation has [number_vertices] vertices and its adjacencies are given clockwise in PLANAR CODE
+//See the plantri manual for understanding PLANAR CODE
 class Triangulation{
 	public:
 		int number_vertices{ 0 };
 		int number_edges{ 0 };
 		vector<vector<int>> adjacencies{}; //plantri-form
-		//vector<vector<int>> edge_weights{}; //same as plantri-form but now with weights?
 		int total_edge_weight{ 0 }; 
-		//vector<vector<int>> adjacency_matrix{}; //0 1 symmetric matrix of incidences
-		//vector<vector<int>> edge_weights_matrix{}; //initialized to have weight one on edges
-		vector<int> shelling_order{};
-		//Shelling Inverse, an inverse function to the shelling order which returns the index in which the input appears
+		vector<int> shelling_order{}; //An ordering on the vertices so that every new vertex has two previous mutually-adjacent neighbors
 		map<int, int> shelling_order_inverse{};
-		int smooth_polytope_vertex_count;
+		int smooth_polytope_vertex_count; //The number of triangles, or the number of vertices of the corresponding smooth 3-polytope
 		//Triangulation constructor
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
@@ -225,13 +247,16 @@ class Triangulation{
 	}
 
 	//Rotates the various adjacency vectors so that the first and last entry are previously inside the shelling_order
-	//Should only be run *after* computing a shelling order! 
 	void rotate_adjacencies(){ 
+		assert((int) shelling_order.size() == number_vertices);	//Should only be run *after* computing a shelling order! 
+		
 		vector<int> rebuilt_shelling = {};
+		
 		//The first three vertices. The origin of the smooth polygon should always be mapped to the origin in 3-space. 
 		rebuilt_shelling.push_back(shelling_order[0]);
 		rebuilt_shelling.push_back(shelling_order[1]);
 		rebuilt_shelling.push_back(shelling_order[2]);
+		//The first three vertices should form a triangle, and their adjacencies should be fixed
 		while(adjacencies[shelling_order[0]][0] != shelling_order[1]){
 			rotate(adjacencies[shelling_order[0]].begin(), adjacencies[shelling_order[0]].begin() + 1, adjacencies[shelling_order[0]].end());
 		}
@@ -480,35 +505,10 @@ class Triangulation{
 	}
 };
 
-void unimodular3simplexexample(){
-	//Initialization
-	Triangulation K_4(4, {{1, 3, 2}, {2, 3, 0}, {0, 3, 1}, {1, 2, 0}}); 
-	K_4.compute_a_shelling();
-	K_4.rotate_adjacencies();
-	K_4.print();
-	//Smooth3Polytope(K_4, {0, 1, 2, 3}); //only input ""fixed"" triangulations!!
-
-	//K_4.build_polytopes_edge_weights_test({}, 0);
-}
-
 void cubeexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
 	Octahedron.build_all_polytopes();
 }
-
-/*void haaseexample(){
-	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
-	Octahedron.compute_a_shelling();
-	Octahedron.rotate_adjacencies();
-	Octahedron.compute_shelling_inverse();
-	Octahedron.edge_weights[0] = {2, 2, 2, 2};
-	Octahedron.edge_weights[1][3] = 2;
-	Octahedron.edge_weights[2][3] = 2;
-	Octahedron.edge_weights[3][0] = 2;
-	Octahedron.edge_weights[4][0] = 2;
-	Octahedron.print();
-	Octahedron.build_polytopes({}, 0);
-}	*/
 
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
@@ -547,7 +547,7 @@ void read_plantri_triangulation(string input_file_name){
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
 		new_Triangulation.build_all_polytopes();
 		triangulations++;
-		cout << triangulations << endl;
+		//cout << triangulations << endl;
 	}
 }
 
@@ -574,20 +574,33 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 
 			vertex_coordinates.push_back({x_coordinate - translation_x, y_coordinate - translation_y});
 		}
+
+
 		//After finishing with a line, process it into the Smooth_Polygon_DB
 		//First put it into standard position
 		vertex_coordinates = standard_position(vertex_coordinates);
-
-		//Everything below could be consolidated as a function? 
 		//Compute its edge_lengths
 		vector<int> edge_lengths = compute_edge_lengths(vertex_coordinates);
+
 		//Define the incoming new Smooth Polygon
 		Smooth_Polygon new_Polygon = Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates);
 		Smooth_Polygon_DB[new_Polygon.edge_lengths].insert(new_Polygon);
+
+		//Also define its mirror image - this is needed since our orientation when embedding in Z^3 is fixed
+		vector<vector<int>> vertex_coordinates_reverse = flip_x_y_coordinates(vertex_coordinates); 
+		vector<int> edge_lengths_reverse = edge_lengths;
+		reverse(edge_lengths_reverse.begin(), edge_lengths_reverse.end());
+		reverse(vertex_coordinates_reverse.begin()+1, vertex_coordinates_reverse.end());
+		Smooth_Polygon new_Polygon_reverse = Smooth_Polygon(number_vertices, 0, edge_lengths_reverse, vertex_coordinates_reverse);
+		new_Polygon_reverse.print();
+		Smooth_Polygon_DB[new_Polygon_reverse.edge_lengths].insert(new_Polygon_reverse);
 		//Now rotate its embeddings
 		for(int i = 1; i < number_vertices; i++){
-			new_Polygon.rotate_embedding();
+			new_Polygon.rotate_embedding(); //Rotate the polygon and re-insert it
 			Smooth_Polygon_DB[new_Polygon.edge_lengths].insert(new_Polygon);
+			//And also for the mirror
+			new_Polygon_reverse.rotate_embedding();
+			Smooth_Polygon_DB[new_Polygon_reverse.edge_lengths].insert(new_Polygon_reverse); 
 		}
 	}
 }
@@ -616,12 +629,14 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-	string input_plantri_file;
-	input_plantri_file = "plantri_output14"; 
-    
+	int triangulation_number_vertices = 12; 
+
+
 	read_polygon_DB();
 	//cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
 	auto start_time = std::chrono::high_resolution_clock::now();
+	string input_plantri_file = "plantri_output";
+	input_plantri_file += to_string(triangulation_number_vertices);
 	read_plantri_triangulation(input_plantri_file); 
 	//cubeexample();
 	// Stop measuring time

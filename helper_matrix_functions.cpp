@@ -54,13 +54,13 @@ vector<vector<int>> matrix_inverse(vector<vector<int>> matrix) {
 }
 
 void increment_one(vector<int>& input_vector) {
-    for(int i = 0; i < input_vector.size(); i++){
+    for(int i = 0; i < (int) input_vector.size(); i++){
         input_vector[i]++;
     }
 }
 
 vector<int> divide_vector(vector<int> input_vector, int mod_factor) {
-    for (int i = 0; i < input_vector.size(); i++) {
+    for (int i = 0; i < (int) input_vector.size(); i++) {
         //Checks for the possibility of a weird division occurring 
         assert(input_vector[i] == 0 || input_vector[i] % mod_factor == 0);
         input_vector[i] = input_vector[i] / mod_factor;
@@ -73,7 +73,7 @@ vector<int> add_vector(vector<int> first_summand_vector, vector<int> second_summ
         cout << "Adding vectors of different size!" << "\n";
     }
     vector<int> sum_vector;
-    for (int i = 0; i < first_summand_vector.size(); i++) {
+    for (int i = 0; i < (int) first_summand_vector.size(); i++) {
         sum_vector.push_back(first_summand_vector[i] + second_summand_vector[i]);
     }
     return sum_vector;
@@ -84,7 +84,7 @@ vector<int> subtract_vector(vector<int> minuend_vector, vector<int> subtrahend_v
         cout << "Subtracting vectors of different size!" << "\n";
     }
     vector<int> difference_vector;
-    for (int i = 0; i < minuend_vector.size(); i++) {
+    for (int i = 0; i < (int) minuend_vector.size(); i++) {
         difference_vector.push_back(minuend_vector[i] - subtrahend_vector[i]);
     }
     return difference_vector;
@@ -119,7 +119,7 @@ bool mergable(MyMap const& a, MyMap const& b) {
 
 vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coordinates){
     vector<vector<int>> result;
-    for(int vector_index = 0; vector_index < vertex_coordinates.size(); vector_index++){
+    for(int vector_index = 0; vector_index < (int) vertex_coordinates.size(); vector_index++){
         result.push_back({vertex_coordinates[vector_index][1], vertex_coordinates[vector_index][0]});
     }
     return result;
