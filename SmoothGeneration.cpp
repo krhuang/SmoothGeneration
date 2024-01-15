@@ -13,15 +13,17 @@
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 20;
+const int MAX_LATTICE_POINTS = 24;
 
-//Various analytics for understanding the programs runtime/output
+//Various analytics for runtime analysis
+//------------------------
 double affine_transformation_time;
 double dictionary_merge_check_time;
 double edge_length_allocation_time;
 int polytopes_produced;
 int affine_transformations_done;
 int triangulations; 
+//------------------------
 
 //Outputs the produced polytopes to a file
 //It should take the format
@@ -615,16 +617,16 @@ int main(){
 	read_polygon_DB();
 
 	auto start_time = std::chrono::high_resolution_clock::now();
-		
 
-	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 12; triangulation_number_vertices++){
+
+	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 14; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
 		read_plantri_triangulation(input_plantri_file); 
 	}
 
 
-	
+
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 	cout << "Time taken: " << duration.count() << "\n";
