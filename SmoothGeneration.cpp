@@ -542,7 +542,7 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 	ifstream fin(input_file_name);
 	int number_vertices;
 	while(fin >> number_vertices){
-		//Read a line of the file, putting the coordinates into "vertex_coordinates"
+		//Read a line of the file, putting the coordinates into "vertex_coordinates", translating the first to be the origin
 		char colon;
 		int x_coordinate, y_coordinate;
 		fin >> colon;
@@ -613,16 +613,19 @@ int main(){
 
 
 	read_polygon_DB();
-	//cout << Smooth_Polygon_DB.size() << " Smooth Polygons in the Database... \n";
-	auto start_time = std::chrono::high_resolution_clock::now();
-	string input_plantri_file = "plantri_output";
-	input_plantri_file += to_string(triangulation_number_vertices);
-	read_plantri_triangulation(input_plantri_file); 
-	//cubeexample();
-	// Stop measuring time
-    auto end_time = std::chrono::high_resolution_clock::now();
 
-   	// Calculate duration in seconds
+	auto start_time = std::chrono::high_resolution_clock::now();
+		
+
+	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 12; triangulation_number_vertices++){
+		string input_plantri_file = "plantri_output";
+		input_plantri_file += to_string(triangulation_number_vertices);
+		read_plantri_triangulation(input_plantri_file); 
+	}
+
+
+	
+    auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 	cout << "Time taken: " << duration.count() << "\n";
 	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << endl;
