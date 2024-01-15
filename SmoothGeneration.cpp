@@ -37,14 +37,18 @@ int triangulations;
 // 1 0 1
 // 1 1 1
 void output_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
-	cout << "Outputting polytope" << endl;
-	cout << number_vertices << endl;
+	ofstream output_file;
+	string output_file_name = "SmoothGeneration_output";
+	output_file_name += to_string(number_vertices);
+	output_file.open(output_file_name, ios::app);
+	output_file << number_vertices << endl;
 	for (const auto& [key, value] : vertex_dictionary) {
         for (const auto& iter : value) {
-            cout << iter << " ";
+            output_file << iter << " ";
         }
-        cout << "\n";
+        output_file << "\n";
     }
+    //output_file.close();
 }
 
 //A helper function for balls_and_boxes
@@ -182,8 +186,7 @@ public:
 	}
 };
 //Database of Smooth polygons. 
-//This should have multiple entries for different embeddings of the same smooth polygon with various vertices being the origin
-//TODO it should also have mirrored smooth polygons
+//This should have multiple entries for different embeddings of the same smooth polygon with various vertices being the origin, and also mirrored
 map<vector<int>, set<Smooth_Polygon>> Smooth_Polygon_DB;
 
 //Triangulations, usually given by plantri in text form. 
@@ -215,18 +218,6 @@ class Triangulation{
 		}
 	//Computes an arbitrary shelling order on the triangulation
 	//Here a shelling requires that the first three vertices form a triangle, and that every new vertex thereafter must form a triangle with two of the previous vertices of the shelling
-	/*
-	vector<vector<int>> initial_edge_lengths(){
-		vector<vector<int>> edge_weights = adjacencies; 
-		for(int vertex = 0; vertex < number_vertices; vertex++){
-			for(int adjacency = 0; adjacency< (int) adjacencies[vertex].size(); adjacency++){
-				edge_weights[vertex][adjacency] = 0;	
-			}
-		}
-		return edge_weights;
-	}
-	*/
-
 	void compute_a_shelling(){
 		shelling_order.push_back(0); 
 		for(int i = 0; (int) shelling_order.size() < number_vertices; i++){
@@ -240,6 +231,7 @@ class Triangulation{
 		}
 	}
 
+	//Computes the inverse of the shelling order, for purposes of relabeling
 	void compute_shelling_inverse(){
 		for(int i = 0; i < (int) shelling_order.size(); i++){
 			shelling_order_inverse[shelling_order[i]] = i;
@@ -275,7 +267,7 @@ class Triangulation{
 			current_vertex++;
 		}
 	}
-
+	//Relables everything so that the ordering 0, 1, 2, 3, ... is a valid shelling order
 	void invert_shelling(){
 		vector<vector<int>> new_adjacencies;
 		for(int shelling_num = 0; shelling_num < number_vertices; shelling_num++){
@@ -315,9 +307,10 @@ class Triangulation{
 
 	//Returns possible edge-length allocations along with the total weight used, as the second of the pair
 	vector <pair<vector<int>, int>> edge_length_allocations(int shelling_num, int remaining_weight, const vector<vector<int>>& edge_weights){
+		auto start_time = std::chrono::high_resolution_clock::now();
+		
 		//Fill in edge weights
 		//Iterate through neighbors of the current vertex
-		auto start_time = std::chrono::high_resolution_clock::now();
 		vector<int> previous_weight;
 		int num_previous_neighbors = 0; 
 		int prev_neighbor;
@@ -332,8 +325,6 @@ class Triangulation{
 				for(int i = 0; i < (int) edge_weights[prev_neighbor].size(); i++){
 					if(adjacencies[prev_neighbor][i] == shelling_num){
 						previous_edge_weight_map[adjacency_index] = edge_weights[prev_neighbor][i];
-						//cout << "Currently on shelling num " << shelling_num << endl;
-						//cout << adjacency_index << " => " << edge_weights[prev_neighbor][i] << endl;
 					}
 				}
 			}
@@ -344,40 +335,30 @@ class Triangulation{
 			//Increments weights by one (eliminates 0s)
 			increment_one(partition);
 			//Then insert previous weights which have already been decided
-			//print_vector(partition);
 			map<int,int>::iterator it;
 			for(it = previous_edge_weight_map.begin(); it != previous_edge_weight_map.end(); it++){
-				//cout << it->first << it->second << endl;
 				partition.insert(partition.begin() + it->first, it->second);
-				//print_vector(partition);
-				//partition.push_back(1);
 			}
-			//print_vector(partition);
 			result.push_back(make_pair(partition, used_weight));
 		}
-		//cout << "Found " << num_previous_neighbors << " previous neighbors" << endl;
-		auto end_time = std::chrono::high_resolution_clock::now();
 
-    	// Calculate duration in seconds
+
+		auto end_time = std::chrono::high_resolution_clock::now();
     	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
     	edge_length_allocation_time += duration.count();
+
+
 		return result;
 	}
 
 	void build_all_polytopes(){
+		//Some precomputations / data-massaging of the triangulation
 		compute_a_shelling();
 		rotate_adjacencies();
 		compute_shelling_inverse();
-		invert_shelling();
-		//build_polytopes(); with many different edge lengths
-		//vector<vector<int>> initialized_edge_lengths = initial_edge_lengths();
-		//print();
-		auto start_time = std::chrono::high_resolution_clock::now();
+		invert_shelling(); 
+		//Building all of the polytopes
 		build_polytopes_edge_weights_test({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
-		auto end_time = std::chrono::high_resolution_clock::now();
-    	// Calculate duration in seconds
-    	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-    	//cout << "Time taken on building all polytopes: " << duration.count() << " seconds" << endl;
 	}
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
@@ -592,7 +573,6 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 		reverse(edge_lengths_reverse.begin(), edge_lengths_reverse.end());
 		reverse(vertex_coordinates_reverse.begin()+1, vertex_coordinates_reverse.end());
 		Smooth_Polygon new_Polygon_reverse = Smooth_Polygon(number_vertices, 0, edge_lengths_reverse, vertex_coordinates_reverse);
-		new_Polygon_reverse.print();
 		Smooth_Polygon_DB[new_Polygon_reverse.edge_lengths].insert(new_Polygon_reverse);
 		//Now rotate its embeddings
 		for(int i = 1; i < number_vertices; i++){
@@ -629,7 +609,7 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-	int triangulation_number_vertices = 12; 
+	int triangulation_number_vertices = 4; 
 
 
 	read_polygon_DB();
