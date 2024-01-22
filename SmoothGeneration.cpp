@@ -38,9 +38,9 @@ int triangulations;
 // 0 1 1
 // 1 0 1
 // 1 1 1
-void output_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
+void print_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
 	ofstream output_file;
-	string output_file_name = "SmoothGeneration_output";
+	string output_file_name = "SmoothGeneration_output/SmoothGeneration_output";
 	output_file_name += to_string(number_vertices);
 	output_file.open(output_file_name, ios::app);
 	output_file << number_vertices << endl;
@@ -360,25 +360,25 @@ class Triangulation{
 		compute_shelling_inverse();
 		invert_shelling(); 
 		//Building all of the polytopes
-		build_polytopes_edge_weights_test({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
+		build_polytopes({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
 	}
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
 	//This should also have as input the edge-weights map which tells the recursion what edge weights have been used so far
 	//As well as a remaining_weight counter to know when we've built too large of a polytope
-	void build_polytopes_edge_weights_test(map<set<int>, vector<int>> vertex_coordinates, int shelling_num, int remaining_weight, vector<vector<int>> edge_weights){ 
+	void build_polytopes(map<set<int>, vector<int>> vertex_coordinates, int shelling_num, int remaining_weight, vector<vector<int>> edge_weights){ 
 		vector<vector<int>> new_vertices = {};
 		map<set<int>, vector<int>> new_vertex_coordinates = {};
 		vector<int> curent_vertex_edge_lengths;
 	
-		int used_weight = 0;
+		
 		if(remaining_weight < 0){
 			cout << "Went below 0 remaining_weight!" << endl;
 		}
 		else if(shelling_num == number_vertices){
-			cout << "Finished iterating through the triangulation" << endl;
-			print_dictionary(vertex_coordinates);
-			output_polytope(smooth_polytope_vertex_count, vertex_coordinates);
+			//cout << "Finished iterating through the triangulation" << endl;
+			//print_dictionary(vertex_coordinates);
+			print_polytope(smooth_polytope_vertex_count, vertex_coordinates);
 			polytopes_produced++;
 		}
 		else if(shelling_num == 0){
@@ -399,7 +399,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num+1, remaining_weight - used_weight, new_edge_weights); 
+					build_polytopes(new_vertex_coordinates, shelling_num+1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights); 
 				}
 			}
 		}
@@ -421,12 +421,12 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight, new_edge_weights);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight - polygon.number_interior_lattice_points, new_edge_weights);
 				}
 			}
 		}
 		else if(shelling_num == 2){
-			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight-used_weight, edge_weights)){
+			for(auto& [current_vertex_edge_lengths,used_weight]:edge_length_allocations(shelling_num, remaining_weight, edge_weights)){
 				for(auto& polygon:Smooth_Polygon_DB[current_vertex_edge_lengths]){
 					assert(current_vertex_edge_lengths == polygon.edge_lengths);
 					new_vertex_coordinates = vertex_coordinates;
@@ -443,7 +443,7 @@ class Triangulation{
 					}
 					//print_dictionary(new_vertex_coordinates);
 					//cout << "Finished with the first three faces" << "\n";
-					build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight, new_edge_weights);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights);
 				}
 			}
 		}
@@ -473,7 +473,7 @@ class Triangulation{
    							// Calculate duration in seconds
    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 						dictionary_merge_check_time += duration.count();
-						build_polytopes_edge_weights_test(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight, new_edge_weights);
+						build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights);
 					}
 					else{
 							// Stop measuring time
@@ -496,7 +496,7 @@ void cubeexample(){
 void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
 	//Check that the first 15 characters is >>planar_code<<
-	ifstream plantri_in(input_file_name);
+	ifstream plantri_in("plantri_output/" + input_file_name);
 	char input_char;
 	string planar_code_header;
 	for(int i = 0; i < 15; i++){
@@ -539,15 +539,24 @@ void read_plantri_triangulation(string input_file_name){
 //	3: 0 0 1 0 0 1
 //in clockwise order, and with #vertices as the start of the line
 //This function reads the polygons and puts them into standard form
-void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
+void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
 	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << "\n";
 	ifstream fin(input_file_name);
 	int number_vertices;
 	while(fin >> number_vertices){
 		//Read a line of the file, putting the coordinates into "vertex_coordinates", translating the first to be the origin
+		
+		//Prefix information, before the coordinates
 		char colon;
-		int x_coordinate, y_coordinate;
+		int x_coordinate, y_coordinate, num_interior_lattice_points;
 		fin >> colon;
+		assert(colon == ':');
+		fin >> num_interior_lattice_points;
+		fin >> colon;
+		assert(colon == ':');
+
+
+		//Reading t he coordinates
 		vector<vector<int>> vertex_coordinates;
 		int translation_x, translation_y;
 		vertex_coordinates.push_back({0,0});
@@ -566,7 +575,7 @@ void read_polygon_DB(string input_file_name="Smooth2Polytopesfixed2.txt"){
 		vector<int> edge_lengths = compute_edge_lengths(vertex_coordinates);
 
 		//Define the incoming new Smooth Polygon
-		Smooth_Polygon new_Polygon = Smooth_Polygon(number_vertices, 0, edge_lengths, vertex_coordinates);
+		Smooth_Polygon new_Polygon = Smooth_Polygon(number_vertices, num_interior_lattice_points, edge_lengths, vertex_coordinates);
 		Smooth_Polygon_DB[new_Polygon.edge_lengths].insert(new_Polygon);
 
 		//Also define its mirror image - this is needed since our orientation when embedding in Z^3 is fixed
