@@ -13,7 +13,7 @@
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 24;
+const int MAX_LATTICE_POINTS = 33;
 
 //Various analytics for runtime analysis
 //------------------------
@@ -27,7 +27,7 @@ int triangulations;
 
 //Outputs the produced polytopes to a file
 //It should take the format
-//First number if the #vertices
+//First number is the #vertices
 //Each row thereafter is a vertex in Z^3
 // 6
 // 0 0 0
@@ -373,7 +373,7 @@ class Triangulation{
 	
 		
 		if(remaining_weight < 0){
-			cout << "Went below 0 remaining_weight!" << endl;
+			//cout << "Went below 0 remaining_weight!" << endl;
 		}
 		else if(shelling_num == number_vertices){
 			//cout << "Finished iterating through the triangulation" << endl;
@@ -620,9 +620,6 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
-	int triangulation_number_vertices = 4; 
-
-
 	read_polygon_DB();
 
 	auto start_time = std::chrono::high_resolution_clock::now();
