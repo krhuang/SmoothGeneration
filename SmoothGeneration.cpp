@@ -13,7 +13,7 @@
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 35;
+const int MAX_LATTICE_POINTS = 31;
 //The maximum # of vertices our triangulations are allowed to have. This upper bounds the files which we have to open. Note that the # of triangulations grows exponentially
 const int MAX_PLANTRI_OUTPUT = 13;
 const int MIN_PLANTRI_OUTPUT = 4;
