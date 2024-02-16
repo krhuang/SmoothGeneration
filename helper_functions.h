@@ -1,6 +1,6 @@
-// helper_matrix_functions.h
-#ifndef HELPER_MATRIX_FUNCTIONS_H
-#define HELPER_MATRIX_FUNCTIONS_H
+// helper_functions.h
+#ifndef HELPER_FUNCTIONS_H
+#define HELPER_FUNCTIONS_H
 
 #include <vector>
 #include <map>
@@ -27,4 +27,4 @@ vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coord
 bool mergable(MyMap const& a, MyMap const& b);
 
 
-#endif // HELPER_MATRIX_FUNCTIONS_H
+#endif // HELPER_FUNCTIONS_H

@@ -9,11 +9,11 @@
 #include <map>
 #include <chrono>
 #include <cassert>
-#include "helper_matrix_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
+#include "helper_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 33;
+const int MAX_LATTICE_POINTS = 35;
 
 //Various analytics for runtime analysis
 //------------------------

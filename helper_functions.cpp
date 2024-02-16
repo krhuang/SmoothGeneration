@@ -1,5 +1,5 @@
-// helper_matrix_functions.cpp
-#include "helper_matrix_functions.h"
+// helper_functions.cpp
+#include "helper_functions.h"
 
 bool element_of_vector(int num, const vector<int>& vect) {
     return find(vect.begin(), vect.end(), num) != vect.end();
