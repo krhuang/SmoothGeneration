@@ -17,8 +17,6 @@ const int MAX_LATTICE_POINTS = 31;
 //The maximum # of vertices our triangulations are allowed to have. This upper bounds the files which we have to open. Note that the # of triangulations grows exponentially
 const int MAX_PLANTRI_OUTPUT = 13;
 const int MIN_PLANTRI_OUTPUT = 4;
-//A boolean flag for if a triangulation produced *any* polytope
-bool polytope_built_flag; 
 
 //Various analytics for runtime analysis
 //------------------------
@@ -119,11 +117,12 @@ class Triangulation{
 	public:
 		int number_vertices{ 0 };
 		int number_edges{ 0 };
-		vector<vector<int>> adjacencies{}; //plantri-form
+		vector<vector<int>> adjacencies{}; 		//In plantri form - adjacencies are given in clockwise order
 		int total_edge_weight{ 0 }; 
-		vector<int> shelling_order{}; //An ordering on the vertices so that every new vertex has two previous mutually-adjacent neighbors
+		vector<int> shelling_order{}; 			//An ordering on the vertices so that every new vertex has two previous mutually-adjacent neighbors
 		map<int, int> shelling_order_inverse{};
-		int smooth_polytope_vertex_count; //The number of triangles, or the number of vertices of the corresponding smooth 3-polytope
+		int smooth_polytope_vertex_count; 		//The number of triangles, or the number of vertices of the corresponding smooth 3-polytope
+		bool built_polytope_flag; 					//A boolean flag for if a triangulation produced *any* polytope
 		//Triangulation constructor
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
@@ -220,12 +219,12 @@ class Triangulation{
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
 		cout << "It is (potentially) the dual graph of a smooth polytope with " << smooth_polytope_vertex_count << " vertices. \n"; 
 		cout << "Its Adjacencies are given by" << "\n";
-		print_matrix(adjacencies);
+		print_matrix(adjacencies); 
 		//cout << "Its Edge Weights are given by" << "\n";
 		//print_matrix(edge_weights);
-		cout << "and it has total edge weight " << total_edge_weight << "\n";
-		cout << "Its Shelling Order is ";
-		print_vector(shelling_order);
+		//cout << "and it has total edge weight " << total_edge_weight << "\n";
+		//cout << "Its Shelling Order is ";
+		//print_vector(shelling_order);
 	}
 
 	//Returns possible edge-length allocations along with the total weight used, as the second of the pair
@@ -300,6 +299,7 @@ class Triangulation{
 			//cout << "Finished iterating through the triangulation" << endl;
 			//print_dictionary(vertex_coordinates);
 			print_polytope(smooth_polytope_vertex_count, vertex_coordinates);
+			built_polytope_flag = true;
 			polytopes_produced++;
 		}
 		else if(shelling_num == 0){
@@ -452,6 +452,9 @@ void read_plantri_triangulation(string input_file_name){
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
 		new_Triangulation.build_all_polytopes();
 		triangulations++;
+		if (new_Triangulation.built_polytope_flag == false){
+			new_Triangulation.print();
+		}
 	}
 }
 
@@ -548,7 +551,7 @@ int main(){
 
 
 	#pragma omp parallel for
-	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 8; triangulation_number_vertices++){
+	for(int triangulation_number_vertices = MIN_PLANTRI_OUTPUT; triangulation_number_vertices <= MAX_PLANTRI_OUTPUT; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
 		read_plantri_triangulation(input_plantri_file); 
