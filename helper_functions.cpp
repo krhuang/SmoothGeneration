@@ -124,3 +124,89 @@ vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coord
     }
     return result;
 }
+
+
+//Outputs the produced polytopes to a file
+//It should take the format
+//First number is the #vertices
+//Each row thereafter is a vertex in Z^3
+// 6
+// 0 0 0
+// 1 0 0 
+// 0 1 0
+// 0 0 1
+// 1 1 0
+// 0 1 1
+// 1 0 1
+// 1 1 1
+void print_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
+    ofstream output_file;
+    string output_file_name = "SmoothGeneration_output/SmoothGeneration_output";
+    output_file_name += to_string(number_vertices);
+    output_file.open(output_file_name, ios::app);
+    output_file << number_vertices << endl;
+    for (const auto& [key, value] : vertex_dictionary) {
+        for (const auto& iter : value) {
+            output_file << iter << " ";
+        }
+        output_file << "\n";
+    }
+    //output_file.close();
+}
+
+//A helper function for balls_and_boxes
+void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
+    if ( (int) current.size() == boxes){
+        result.push_back(make_pair(current, used_weight));
+        return;
+    }
+
+    for (int i = 0; i <= balls; i++){
+        current.push_back(i);
+        balls_and_boxes_helper(balls - i, boxes, current, result, used_weight+i);
+        current.pop_back();
+    }
+}
+
+//Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
+vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
+    vector<pair<vector<int>, int>> result;
+    vector<int> current;
+    balls_and_boxes_helper(balls, boxes, current, result, 0);
+    return result;
+}
+
+//Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
+//This could be part of the initialization? 
+vector<int> compute_edge_lengths(const vector<vector<int>>& vertex_coordinates){
+    //Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
+    //Example:
+    //>print_vector({{0, 0}, {0, 3}, {2,0}})
+    //>3 1 2 
+    vector<int> edge_lengths;
+    vector<int> difference;
+    for(int i=0; i< (int) vertex_coordinates.size()-1; i++){
+        difference = subtract_vector(vertex_coordinates[i+1], vertex_coordinates[i]);
+        edge_lengths.push_back(gcd(difference[0], difference[1]));
+    }
+    difference = vertex_coordinates[vertex_coordinates.size()-1];
+    edge_lengths.push_back(gcd(difference[0], difference[1]));
+    return edge_lengths;
+}
+
+//TODO: This function could be without passing a copy, ie with & notation. Could be slightly faster, and better in general
+//Though this is a precomputation, so its runspeed is basically irrelevant
+//Takes the vertices of a Smooth Polygon with the first vector being the origin, and puts it in standard position (rays from the origin are along the x, y axes)
+vector<vector<int>> standard_position(vector<vector<int>> vertex_coordinates){
+    int x_length, y_length;
+    int number_vertices = vertex_coordinates.size();
+    vector<vector<int>> standard_position_matrix;
+    y_length = gcd(vertex_coordinates[1][0], vertex_coordinates[1][1]);
+    x_length = gcd(vertex_coordinates[number_vertices - 1][0], vertex_coordinates[number_vertices-1][1]);
+    standard_position_matrix = {{vertex_coordinates[number_vertices-1][0] / x_length, vertex_coordinates[number_vertices-1][1] / x_length},{vertex_coordinates[1][0] / y_length, vertex_coordinates[1][1] / y_length}};
+    standard_position_matrix = matrix_inverse(standard_position_matrix);
+    for(int i = 0; i < number_vertices; i++){
+        vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
+    }
+    return vertex_coordinates;
+}

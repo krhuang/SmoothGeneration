@@ -1,19 +1,24 @@
 #include <iostream>
-#include <fstream>
+#include <fstream>	//file input and output handling
 #include <set>
 #include <vector>
 #include <time.h>
-#include <fstream>
 #include <numeric>
 #include <algorithm>
 #include <map>
-#include <chrono>
-#include <cassert>
+#include <chrono>	//time analytics
+#include <cassert> 	//assert statements
+#include <omp.h>	//parallelization with OpenMP
 #include "helper_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
 const int MAX_LATTICE_POINTS = 35;
+//The maximum # of vertices our triangulations are allowed to have. This upper bounds the files which we have to open. Note that the # of triangulations grows exponentially
+const int MAX_PLANTRI_OUTPUT = 13;
+const int MIN_PLANTRI_OUTPUT = 4;
+//A boolean flag for if a triangulation produced *any* polytope
+bool polytope_built_flag; 
 
 //Various analytics for runtime analysis
 //------------------------
@@ -25,97 +30,13 @@ int affine_transformations_done;
 int triangulations; 
 //------------------------
 
-//Outputs the produced polytopes to a file
-//It should take the format
-//First number is the #vertices
-//Each row thereafter is a vertex in Z^3
-// 6
-// 0 0 0
-// 1 0 0 
-// 0 1 0
-// 0 0 1
-// 1 1 0
-// 0 1 1
-// 1 0 1
-// 1 1 1
-void print_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dictionary){
-	ofstream output_file;
-	string output_file_name = "SmoothGeneration_output/SmoothGeneration_output";
-	output_file_name += to_string(number_vertices);
-	output_file.open(output_file_name, ios::app);
-	output_file << number_vertices << endl;
-	for (const auto& [key, value] : vertex_dictionary) {
-        for (const auto& iter : value) {
-            output_file << iter << " ";
-        }
-        output_file << "\n";
-    }
-    //output_file.close();
-}
-
-//A helper function for balls_and_boxes
-void balls_and_boxes_helper(int balls, int boxes, vector<int>& current, vector<pair<vector<int>, int>>& result, int used_weight){
-	if ( (int) current.size() == boxes){
-		result.push_back(make_pair(current, used_weight));
-		return;
-	}
-
-	for (int i = 0; i <= balls; i++){
-		current.push_back(i);
-		balls_and_boxes_helper(balls - i, boxes, current, result, used_weight+i);
-		current.pop_back();
-	}
-}
-
-//Returns all possible partitions of #balls into #boxes, with possibility of not using all the boxes
-vector<pair<vector<int>, int>> balls_and_boxes(int balls, int boxes){
-	vector<pair<vector<int>, int>> result;
-	vector<int> current;
-	balls_and_boxes_helper(balls, boxes, current, result, 0);
-	return result;
-}
-
-//Given the vertex coordinates of a Smooth Polygon, computes its edge lengths in clockwise order, starting from the origin
-//This could be part of the initialization? 
-vector<int> compute_edge_lengths(const vector<vector<int>>& vertex_coordinates){
-	//Computes the clockwise lattice edge-lengths of Smooth Polygon, for its initialization. 
-	//Example:
-	//>print_vector({{0, 0}, {0, 3}, {2,0}})
-	//>3 1 2 
-	vector<int> edge_lengths;
-	vector<int> difference;
-	for(int i=0; i< (int) vertex_coordinates.size()-1; i++){
-		difference = subtract_vector(vertex_coordinates[i+1], vertex_coordinates[i]);
-		edge_lengths.push_back(gcd(difference[0], difference[1]));
-	}
-	difference = vertex_coordinates[vertex_coordinates.size()-1];
-	edge_lengths.push_back(gcd(difference[0], difference[1]));
-	return edge_lengths;
-}
-
-//TODO: This function could be without passing a copy, ie with & notation. Could be slightly faster, and better in general
-//Takes the vertices of a Smooth Polygon with the first vector being the origin, and puts it in standard position (rays from the origin are along the x, y axes)
-vector<vector<int>> standard_position(vector<vector<int>> vertex_coordinates){
-	int x_length, y_length;
-	int number_vertices = vertex_coordinates.size();
-	vector<vector<int>> standard_position_matrix;
-	y_length = gcd(vertex_coordinates[1][0], vertex_coordinates[1][1]);
-	x_length = gcd(vertex_coordinates[number_vertices - 1][0], vertex_coordinates[number_vertices-1][1]);
-	standard_position_matrix = {{vertex_coordinates[number_vertices-1][0] / x_length, vertex_coordinates[number_vertices-1][1] / x_length},{vertex_coordinates[1][0] / y_length, vertex_coordinates[1][1] / y_length}};
-	standard_position_matrix = matrix_inverse(standard_position_matrix);
-	for(int i = 0; i < number_vertices; i++){
-		vertex_coordinates[i] = matrix_multiply(standard_position_matrix, vertex_coordinates[i]);
-	}
-	return vertex_coordinates;
-}
-
 //The class of Smooth Polygons
 class Smooth_Polygon{
 public:
-	int number_vertices{ 0 };
-	int number_interior_lattice_points{ 0 }; //This should be computed using i.e. Polymake, and be part of the file from which the smooth polygons are read
-	vector<int> edge_lengths{  }; //Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
-	vector<vector<int>> vertex_coordinates{}; //Vertex coordinates
+	int number_vertices{ 0 }; 						//The # of vertices
+	int number_interior_lattice_points{ 0 }; 		//This should be computed using i.e. Polymake, and be part of the file from which the smooth polygons are read
+	vector<int> edge_lengths{  }; 					//Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
+	vector<vector<int>> vertex_coordinates{}; 		//Vertex coordinates, in clockwise order
 
 	//Constructor
 	Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
@@ -127,6 +48,7 @@ public:
 		return vertex_coordinates < other.vertex_coordinates;
 	}
 
+	//Print
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << "\n";
 		cout << "Its vertices are " << "\n";
@@ -145,7 +67,6 @@ public:
 	//Returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
 	//For embedding polygons in 3-space, as the facets of a polytope
 	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
-		
 		affine_transformations_done++; //Runtime analytics
 		auto start_time = std::chrono::high_resolution_clock::now(); //Runtime analytics
 		
@@ -164,14 +85,11 @@ public:
 		auto end_time = std::chrono::high_resolution_clock::now();
     	auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
     	affine_transformation_time = affine_transformation_time + duration.count();
-		
-
 		return new_vertices; 
-
 	}
 
 	//Takes a Smooth_Polygon object, and rotates its embedding, so that a new vertex is the origin. 
-	//TODO: this could be simpler after we fix the standard_position function
+	//This could be simpler if we fix the standard_position function
 	void rotate_embedding(){
 		//Rotate the edge_length vector
 		//e.g. - 1 2 1 1 becomes 2 1 1 1
@@ -187,8 +105,11 @@ public:
 		vertex_coordinates = standard_position(vertex_coordinates); 
 	}
 };
+
+
 //Database of Smooth polygons. 
 //This should have multiple entries for different embeddings of the same smooth polygon with various vertices being the origin, and also mirrored
+//Imported from Balletti's database via read_polygon_DB()
 map<vector<int>, set<Smooth_Polygon>> Smooth_Polygon_DB;
 
 //Triangulations, usually given by plantri in text form. 
@@ -209,7 +130,7 @@ class Triangulation{
 		{
 			//edge_weights = adjacencies;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
-				for(int adjacency = 0; adjacency< (int) adjacencies[vertex].size(); adjacency++){
+				for(int adjacency = 0; adjacency < (int) adjacencies[vertex].size(); adjacency++){
 					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
 				}
@@ -294,7 +215,7 @@ class Triangulation{
 
 		return true;
 	}
-
+	//Prints the triangulation
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
 		cout << "It is (potentially) the dual graph of a smooth polytope with " << smooth_polytope_vertex_count << " vertices. \n"; 
@@ -399,7 +320,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num+1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights); 
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights); 
 				}
 			}
 		}
@@ -412,7 +333,7 @@ class Triangulation{
 					vector<vector<int>> new_edge_weights = edge_weights;
 					new_edge_weights.push_back(current_vertex_edge_lengths);
 					for(auto& coordinate:new_vertices){
-						coordinate.insert(coordinate.begin(),0); 
+						coordinate.insert(coordinate.begin(), 0); 
 					}
 					int end = adjacencies[1].size();
 					int neighbor;
@@ -438,7 +359,7 @@ class Triangulation{
 					int end = adjacencies[2].size();
 					int neighbor;
 					int prev;
-					for(neighbor = 0, prev = end-1; neighbor < end; prev = neighbor, neighbor++){
+					for(neighbor = 0, prev = end - 1; neighbor < end; prev = neighbor, neighbor++){
 						new_vertex_coordinates[{shelling_order[2], adjacencies[shelling_order[2]][neighbor], adjacencies[shelling_order[2]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
@@ -493,8 +414,9 @@ void cubeexample(){
 	Octahedron.build_all_polytopes();
 }
 
+//Reads plantri output files
 void read_plantri_triangulation(string input_file_name){
-	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << "\n";
+	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << endl;
 	//Check that the first 15 characters is >>planar_code<<
 	ifstream plantri_in("plantri_output/" + input_file_name);
 	char input_char;
@@ -530,17 +452,16 @@ void read_plantri_triangulation(string input_file_name){
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
 		new_Triangulation.build_all_polytopes();
 		triangulations++;
-		//cout << triangulations << endl;
 	}
 }
 
 //Reads the smooth polygons from text file with filename "input_file_name"
 //The input is assumed to be of the form
-//	3: 0 0 1 0 0 1
-//in clockwise order, and with #vertices as the start of the line
-//This function reads the polygons and puts them into standard form
+//	3:0 0 0 1 0 0 1
+//In clockwise order, and with #vertices as the start of the line, the number of interior points on the other side of the colon
+//This function reads the polygons and puts them into standard form, as well as recording rotated and mirrored embeddings
 void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
-	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << "\n";
+	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << endl;
 	ifstream fin(input_file_name);
 	int number_vertices;
 	while(fin >> number_vertices){
@@ -600,13 +521,13 @@ void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
 int main(){
 	/*
 		Algorithm Steps:
-			Construct/Import a library of smooth 2-polytopes (ie from Balletti)
-			Construct/Import a database of triangulations of the sphere (ie from plantri)
-				Massage the Data
+			Import a library of smooth 2-polytopes (ie from Balletti)
+			Import a database of triangulations of the sphere (ie from plantri)
+				Massage the Data:
 					-Duplicate rotated non-identical embeddings
 					-Fix Shelling order so that the first three are in the correct order
 					-And rotate adjacencies so the first and last are previous numbers in the shelling order
-					-Relabel everything so that the shelling order is 0, 1, 2, ...
+					-Relabel everything so that the shelling order is 0, 1, 2, ... (this is mostly for programming convenience)
 			For a specific triangulation
 				Assign edge lengths to the triangulation
 					[STOP CONDITION: Check if number of vertices + edge lenghts - #edges + minimum interior lattice points is >= N]
@@ -620,25 +541,28 @@ int main(){
 		Its triangulation is K_4
 		Its smooth polygons are all the unimodular 2-simplex
 	*/
+	//Read the polygon database
 	read_polygon_DB();
 
 	auto start_time = std::chrono::high_resolution_clock::now();
 
 
-	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 14; triangulation_number_vertices++){
+	#pragma omp parallel for
+	for(int triangulation_number_vertices = 4; triangulation_number_vertices <= 8; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
 		read_plantri_triangulation(input_plantri_file); 
 	}
 
 
-
+	//Outputting various analytics
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 	cout << "Time taken: " << duration.count() << "\n";
-	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << endl;
-	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << endl;
-	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << endl;
-	cout << polytopes_produced << " smooth 3-polytopes were produced" << endl;
-	cout << affine_transformations_done << " affine transformations" << endl;
+	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << "\n";
+	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << "\n";
+	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << "\n";
+	cout << triangulations << " processed" << "\n";
+	cout << polytopes_produced << " smooth 3-polytopes were produced" << "\n";
+	cout << affine_transformations_done << " affine transformations" << "\n";
 }
