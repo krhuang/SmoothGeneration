@@ -106,7 +106,7 @@ public:
 
 
 //Database of Smooth polygons. 
-//This should have multiple entries for different embeddings of the same smooth polygon with various vertices being the origin, and also mirrored
+//This should have multiple entries for different embeddings of the same smooth polygon with various vertices being the origin, and also mirrored embeddings
 //Imported from Balletti's database via read_polygon_DB()
 map<vector<int>, set<Smooth_Polygon>> Smooth_Polygon_DB;
 
@@ -122,7 +122,7 @@ class Triangulation{
 		vector<int> shelling_order{}; 			//An ordering on the vertices so that every new vertex has two previous mutually-adjacent neighbors
 		map<int, int> shelling_order_inverse{};
 		int smooth_polytope_vertex_count; 		//The number of triangles, or the number of vertices of the corresponding smooth 3-polytope
-		bool built_polytope_flag; 					//A boolean flag for if a triangulation produced *any* polytope
+		bool built_polytope_flag; 				//A boolean flag for if a triangulation produced *any* polytope
 		//Triangulation constructor
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
@@ -210,7 +210,7 @@ class Triangulation{
 	}
 
 	bool has_degree_3_or_degree_4_vertex(){
-		//TODO
+		//TODO for Ayzenberg/Delaunay's Criterion
 
 		return true;
 	}
@@ -225,6 +225,20 @@ class Triangulation{
 		//cout << "and it has total edge weight " << total_edge_weight << "\n";
 		//cout << "Its Shelling Order is ";
 		//print_vector(shelling_order);
+	}
+
+	void printf(string output_file_name){
+		ofstream fout;
+		fout.open(output_file_name, ios::app);
+		fout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
+		fout << number_vertices << "\n";
+		for (const auto& row : adjacencies) {
+        	for (const auto& element : row) {
+            	fout << element << " ";
+        	}
+        	fout << "\n";
+    	}
+    	fout << "\n";
 	}
 
 	//Returns possible edge-length allocations along with the total weight used, as the second of the pair
@@ -450,10 +464,15 @@ void read_plantri_triangulation(string input_file_name){
 			}
 		}
 		Triangulation new_Triangulation = Triangulation(number_vertices, adjacencies);
+		new_Triangulation.built_polytope_flag = false;
 		new_Triangulation.build_all_polytopes();
 		triangulations++;
-		if (new_Triangulation.built_polytope_flag == false){
-			new_Triangulation.print();
+		if (new_Triangulation.built_polytope_flag == false && new_Triangulation.number_vertices <= 10){
+			#pragma omp critical
+			{
+				new_Triangulation.printf("Non_Realizable");
+				new_Triangulation.print();
+			}
 		}
 	}
 }
@@ -547,10 +566,10 @@ int main(){
 	//Read the polygon database
 	read_polygon_DB();
 
-	auto start_time = std::chrono::high_resolution_clock::now();
+	auto start_time = std::chrono::high_resolution_clock::now(); 	//Run-time Analytrics
 
 
-	#pragma omp parallel for
+	#pragma omp parallel for //Parallelization
 	for(int triangulation_number_vertices = MIN_PLANTRI_OUTPUT; triangulation_number_vertices <= MAX_PLANTRI_OUTPUT; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
