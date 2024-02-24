@@ -1,2 +1,10 @@
-<h2>Contents</h2>
-This 
+<h2>Generating Smooth 3-Polytopes</h2>
+<p>This repository contains the code and generated dataset of my master's thesis "Generating Smooth 3-Polytopes", which will be available online soon. Implementing and running a noval algorithm for generating smooth 3-polytopes took about half a day to extend the pre-existing database of 103 smooth 3-polytopes with <=16 lattice points (by Lundman) to 1364 smooth 3-polytopes with <=31 lattice points (available in the file prune_output). Oda's Conjecture was verified on all generated polytopes.</p>
+
+<p>The theoretical background of the algorithm is explained in Section 3 of the thesis. The algorithm and its exact implementation is described in Sections 4 and 5. </p>
+
+<p>The generated dataset of polytopes is available in the file <mark>prune_output</mark> .</p>
+
+
+<h2>How to Run the Computation Yourself</h2>
+The algorithm is reliant
