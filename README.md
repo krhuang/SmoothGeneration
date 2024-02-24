@@ -3,6 +3,7 @@
 
 <p>The theoretical background of the algorithm is explained in Section 3 of the thesis. The algorithm and its exact implementation is described in Sections 4 and 5. Detailed references are also contained therein.</p>
 
+<h2>Where is the Dataset?</h2>
 <p>The generated dataset of polytopes is available in the file 'prune_output'.</p>
 
 <h2>How to Run the Computation Yourself</h2>
