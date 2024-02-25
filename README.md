@@ -9,4 +9,13 @@
 <p>Each smooth 3-polytope is given by a series of lines. The first line is the number of vertices, following by lines of triples of integers denoting the coordinates</p>
 
 <h2>Running the Computation Yourself</h2>
-The algorithm utilizes other mathematical computation projects, namely plantri, Balletti's database of smooth polygons, and the many packages included in polymake. 
+<p>The algorithm utilizes other mathematical computation projects, namely plantri, Balletti's database of smooth polygons, and the many packages included in polymake. </p>
+
+<p>For your convenience, plantri output and Balletti's database have been included inside the plantri_output folder and the file SmoothPolytopesDB.txt, respectively.</p>
+
+<p>All that remains is to run the Smooth Generation, and then prune the list for isomorphic copies and polytopes with too many lattice points, via the included Pruning Jupyter Notebook.</p>
+
+<p>If you wish to rerun the computation with smaller or larger numbers you will have to take care to increase the database of smooth polygons, have the needed plantri files, and modify various global variables in the programs.</p>
+
+
+
