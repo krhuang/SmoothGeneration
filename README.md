@@ -8,5 +8,5 @@
 
 <p>Each smooth 3-polytope is given by a series of lines. The first line is the number of vertices, following by lines of triples of integers denoting the coordinates</p>
 
-<h2>How to Run the Computation Yourself</h2>
+<h2>Running the Computation Yourself</h2>
 The algorithm utilizes other mathematical computation projects, namely plantri, Balletti's database of smooth polygons, and the many packages included in polymake. 
