@@ -17,5 +17,7 @@
 
 <p>If you wish to rerun the computation with smaller or larger numbers you will have to take care to increase the database of smooth polygons, have the needed plantri files, and modify various global variables in the programs.</p>
 
+<p>If you plan to redo the computation with larger numbers please message me! I likely am either in the process of doing so myself or at least have many ideas for computational optimizations for you.</p>
+
 
 
