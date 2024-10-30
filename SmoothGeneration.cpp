@@ -301,7 +301,7 @@ class Triangulation{
 		compute_shelling_inverse();
 		invert_shelling(); 
 		//Building all of the polytopes
-		build_polytopes({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count, {});
+		build_polytopes({}, 0, MAX_LATTICE_POINTS - smooth_polytope_vertex_count - min_facet_interior_lattice_points, {});
 	}
 
 	//A recursive function that builds 3-polytopes and appends them to the global variable
@@ -341,7 +341,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights); 
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights); 
 				}
 			}
 		}
@@ -363,7 +363,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight - polygon.number_interior_lattice_points, new_edge_weights);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 				}
 			}
 		}
@@ -385,7 +385,7 @@ class Triangulation{
 					}
 					//print_dictionary(new_vertex_coordinates);
 					//cout << "Finished with the first three faces" << "\n";
-					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 				}
 			}
 		}
@@ -415,7 +415,7 @@ class Triangulation{
    							// Calculate duration in seconds
    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 						dictionary_merge_check_time += duration.count();
-						build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points, new_edge_weights);
+						build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 					}
 					else{
 							// Stop measuring time
@@ -575,6 +575,7 @@ int main(){
 
 	auto start_time = std::chrono::high_resolution_clock::now(); 	//Run-time Analytrics
 
+	cubeexample();
 
 	#pragma omp parallel for //Parallelization
 	for(int triangulation_number_vertices = MIN_PLANTRI_OUTPUT; triangulation_number_vertices <= MAX_PLANTRI_OUTPUT; triangulation_number_vertices++){
