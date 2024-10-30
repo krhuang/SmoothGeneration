@@ -18,7 +18,7 @@ const int MAX_LATTICE_POINTS = 31;
 const int MAX_PLANTRI_OUTPUT = 13;
 const int MIN_PLANTRI_OUTPUT = 4;
 
-//The g-values of smooth polygons. Given n, this array returns the minimum # of interior lattice points of an n-gon. 
+//The g-values of smooth polygons. Given n, this glotbal array returns the minimum # of interior lattice points of an n-gon. See "Daria Olszewska. On the first unknown value of the function g(v)."
 const int interior_point_minimums = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19};
 
 //Various analytics for runtime analysis
@@ -126,12 +126,15 @@ class Triangulation{
 		map<int, int> shelling_order_inverse{};
 		int smooth_polytope_vertex_count; 		//The number of triangles, or the number of vertices of the corresponding smooth 3-polytope
 		bool built_polytope_flag; 				//A boolean flag for if a triangulation produced *any* polytope
+		int min_facet_interior_lattice_points{ 0 };
 		//Triangulation constructor
 		Triangulation(int input_number_vertices, vector<vector<int>> input_adjacencies) 
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
 			//edge_weights = adjacencies;
+
 			for(int vertex = 0; vertex < number_vertices; vertex++){
+				min_facet_interior_lattice_points = interior_point_minimums[(int) adjacencies[vertex.size()]];
 				for(int adjacency = 0; adjacency < (int) adjacencies[vertex].size(); adjacency++){
 					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
@@ -221,6 +224,7 @@ class Triangulation{
 	void print(){
 		cout << "A Triangulation with " << number_vertices << " vertices and " << number_edges << " edges." << "\n";
 		cout << "It is (potentially) the dual graph of a smooth polytope with " << smooth_polytope_vertex_count << " vertices. \n"; 
+		cout << "If realized, the smooth polytope will have at least " << min_facet_interior_lattice_points << " lattice points interior to facets. \n";
 		cout << "Its Adjacencies are given by" << "\n";
 		print_matrix(adjacencies); 
 		//cout << "Its Edge Weights are given by" << "\n";
