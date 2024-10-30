@@ -19,7 +19,7 @@ const int MAX_PLANTRI_OUTPUT = 13;
 const int MIN_PLANTRI_OUTPUT = 4;
 
 //The g-values of smooth polygons. Given n, this glotbal array returns the minimum # of interior lattice points of an n-gon. See "Daria Olszewska. On the first unknown value of the function g(v)."
-const int interior_point_minimums = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19};
+const int interior_point_minimums[] = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19};
 
 //Various analytics for runtime analysis
 //------------------------
@@ -134,7 +134,7 @@ class Triangulation{
 			//edge_weights = adjacencies;
 
 			for(int vertex = 0; vertex < number_vertices; vertex++){
-				min_facet_interior_lattice_points = interior_point_minimums[(int) adjacencies[vertex.size()]];
+				min_facet_interior_lattice_points = interior_point_minimums[(int) adjacencies[vertex].size()];
 				for(int adjacency = 0; adjacency < (int) adjacencies[vertex].size(); adjacency++){
 					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
@@ -432,6 +432,7 @@ class Triangulation{
 
 void cubeexample(){
 	Triangulation Octahedron(6, {{1, 3, 4, 2}, {2, 5, 3, 0}, {0, 4, 5, 1}, {1, 5, 4, 0}, {3, 5, 2, 0}, {4, 3, 1, 2}});
+	Octahedron.print();
 	Octahedron.build_all_polytopes();
 }
 
@@ -576,14 +577,14 @@ int main(){
 	auto start_time = std::chrono::high_resolution_clock::now(); 	//Run-time Analytrics
 
 	cubeexample();
-
+	/*
 	#pragma omp parallel for //Parallelization
 	for(int triangulation_number_vertices = MIN_PLANTRI_OUTPUT; triangulation_number_vertices <= MAX_PLANTRI_OUTPUT; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
 		read_plantri_triangulation(input_plantri_file); 
 	}
-
+	*/
 
 	
 	//===============Outputting various analytics========================
