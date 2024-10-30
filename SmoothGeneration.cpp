@@ -18,6 +18,9 @@ const int MAX_LATTICE_POINTS = 31;
 const int MAX_PLANTRI_OUTPUT = 13;
 const int MIN_PLANTRI_OUTPUT = 4;
 
+//The g-values of smooth polygons. Given n, this array returns the minimum # of interior lattice points of an n-gon. 
+const int interior_point_minimums = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19};
+
 //Various analytics for runtime analysis
 //------------------------
 double affine_transformation_time;
