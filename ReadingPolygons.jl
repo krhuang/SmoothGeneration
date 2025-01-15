@@ -3,6 +3,8 @@ using Polymake 	#via polymake.jl
 using Test 		#for test cases
 include("jarvismarch.jl")
 
+output_file = "Smooth_Polygon_DB_test.txt"
+
 
 function read_numbers_of_polygons(file::String)
     # Open the HDF5 file in read-only mode
@@ -61,18 +63,21 @@ function process_polygons(polygons, n_vertices::Int) 	# Removing type requiremen
         end
         new_polygon = polytope.Polytope(POINTS=polymake_vertices_matrix)
         if new_polygon.SMOOTH
-        	print(n_vertices, ":")
-        	print(new_polygon.N_INTERIOR_LATTICE_POINTS, " ")
-        	println(join(vec(vertices_matrix), " "))
+        	open(output_file, "a") do file
+        		print(file, n_vertices, ":")
+        		print(file, new_polygon.N_INTERIOR_LATTICE_POINTS, ": ")
+        		hull = Convex_Hull(vertices_matrix)
+        		println(file, join([string(p[1], " ", p[2]) for p in hull], " "))
+        	end
         end
     end
 end
 
-function process_hdf5_file(file::String)
-    println("Processing file: $file")
+function process_hdf5_file(input_file::String)
+    println("Processing file: $input_file")
     
     # Step 1: Read the "numbers_of_polygons" dataset
-    numbers_of_polygons = read_numbers_of_polygons(file)
+    numbers_of_polygons = read_numbers_of_polygons(input_file)
     println("Numbers of polygons per vertex count:")
     println(numbers_of_polygons)
 
@@ -82,7 +87,7 @@ function process_hdf5_file(file::String)
         dataset_name = "n$n_vertices"
         println("\nReading dataset: $dataset_name")
         
-        polygons = read_polygons(file, dataset_name)
+        polygons = read_polygons(input_file, dataset_name)
         if length(polygons) > 0
             process_polygons(polygons, n_vertices)
         else
@@ -92,5 +97,8 @@ function process_hdf5_file(file::String)
 end
 
 # Main script
-file_name = "koelman70/l16.h5"  # Replace with the actual file name
-process_hdf5_file(file_name)
+file_name = "koelman70/l8.h5"  # Replace with the actual file name
+
+for i in 3:48
+    process_hdf5_file("koelman70/l$i.h5")
+end

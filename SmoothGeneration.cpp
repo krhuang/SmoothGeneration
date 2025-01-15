@@ -13,13 +13,13 @@
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
-const int MAX_LATTICE_POINTS = 31;
+const int MAX_LATTICE_POINTS = 44;
 //The maximum # of vertices our triangulations are allowed to have. This upper bounds the files which we have to open. Note that the # of triangulations grows exponentially
-const int MAX_PLANTRI_OUTPUT = 13;
+const int MAX_PLANTRI_OUTPUT = 18;
 const int MIN_PLANTRI_OUTPUT = 4;
 
-//The g-values of smooth polygons. Given n, this glotbal array returns the minimum # of interior lattice points of an n-gon. See "Daria Olszewska. On the first unknown value of the function g(v)."
-const int interior_point_minimums[] = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19};
+//The g-values of smooth polygons. Given n, this glotbal array returns the minimum (TODO: currently only a lower-bound, assuming monotonicity) # of interior lattice points of an n-gon. See "Daria Olszewska. On the first unknown value of the function g(v)."
+const int interior_point_minimums[] = {0, 0, 0, 0, 0, 1, 1, 4, 4, 7, 10, 17, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19};
 
 //Various analytics for runtime analysis
 //------------------------
@@ -36,7 +36,7 @@ class Smooth_Polygon{
 public:
 	int number_vertices{ 0 }; 						//The # of vertices
 	int number_interior_lattice_points{ 0 }; 		//This should be computed using i.e. Polymake, and be part of the file from which the smooth polygons are read
-	vector<int> edge_lengths{  }; 					//Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. The first edge is the longest one. 
+	vector<int> edge_lengths{  }; 					//Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. 
 	vector<vector<int>> vertex_coordinates{}; 		//Vertex coordinates, in clockwise order
 
 	//Constructor
@@ -49,7 +49,7 @@ public:
 		return vertex_coordinates < other.vertex_coordinates;
 	}
 
-	//Print
+	//Print function
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << "\n";
 		cout << "Its vertices are " << "\n";
@@ -132,9 +132,9 @@ class Triangulation{
 			: number_vertices(input_number_vertices), number_edges(0), adjacencies(input_adjacencies)
 		{
 			//edge_weights = adjacencies;
-
+			min_facet_interior_lattice_points = 0;
 			for(int vertex = 0; vertex < number_vertices; vertex++){
-				min_facet_interior_lattice_points = interior_point_minimums[(int) adjacencies[vertex].size()];
+				min_facet_interior_lattice_points += interior_point_minimums[(int) adjacencies[vertex].size()];
 				for(int adjacency = 0; adjacency < (int) adjacencies[vertex].size(); adjacency++){
 					//edge_weights[vertex][adjacency] = 0;
 					number_edges++;
@@ -319,6 +319,7 @@ class Triangulation{
 		else if(shelling_num == number_vertices){
 			//cout << "Finished iterating through the triangulation" << endl;
 			//print_dictionary(vertex_coordinates);
+
 			print_polytope(smooth_polytope_vertex_count, vertex_coordinates);
 			built_polytope_flag = true;
 			polytopes_produced++;
@@ -341,6 +342,7 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[0], adjacencies[shelling_order[0]][neighbor], adjacencies[shelling_order[0]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
+					assert(polygon.number_interior_lattice_points >= interior_point_minimums[polygon.number_vertices]);
 					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights); 
 				}
 			}
@@ -363,7 +365,9 @@ class Triangulation{
 						new_vertex_coordinates[{shelling_order[1], adjacencies[shelling_order[1]][neighbor], adjacencies[shelling_order[1]][prev]}] = new_vertices[neighbor];
 					}
 					//print_dictionary(new_vertex_coordinates);
-					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight-used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
+
+					assert(polygon.number_interior_lattice_points >= interior_point_minimums[polygon.number_vertices]);
+					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 				}
 			}
 		}
@@ -385,6 +389,8 @@ class Triangulation{
 					}
 					//print_dictionary(new_vertex_coordinates);
 					//cout << "Finished with the first three faces" << "\n";
+
+					assert(polygon.number_interior_lattice_points >= interior_point_minimums[polygon.number_vertices]);
 					build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 				}
 			}
@@ -415,6 +421,8 @@ class Triangulation{
    							// Calculate duration in seconds
    						auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
 						dictionary_merge_check_time += duration.count();
+
+						assert(polygon.number_interior_lattice_points >= interior_point_minimums[polygon.number_vertices]);
 						build_polytopes(new_vertex_coordinates, shelling_num + 1, remaining_weight - used_weight - polygon.number_interior_lattice_points + interior_point_minimums[polygon.number_vertices], new_edge_weights);
 					}
 					else{
@@ -441,6 +449,11 @@ void read_plantri_triangulation(string input_file_name){
 	cout << "Reading Plantri PLANAR CODE-format planar triangulations from " << input_file_name << "..." << endl;
 	//Check that the first 15 characters is >>planar_code<<
 	ifstream plantri_in("plantri_output/" + input_file_name);
+	if (!plantri_in.is_open()) {
+        std::cerr << "Error: Could not open file '" << input_file_name 
+                  << "' in directory 'plantri_output/'." << std::endl;
+        throw std::runtime_error("File not found or unable to open the file.");
+    }
 	char input_char;
 	string planar_code_header;
 	for(int i = 0; i < 15; i++){
@@ -475,12 +488,9 @@ void read_plantri_triangulation(string input_file_name){
 		new_Triangulation.built_polytope_flag = false;
 		new_Triangulation.build_all_polytopes();
 		triangulations++;
-		if (new_Triangulation.built_polytope_flag == false && new_Triangulation.number_vertices <= 10){
-			#pragma omp critical
-			{
-				new_Triangulation.printf("Non_Realizable");
-				new_Triangulation.print();
-			}
+		if (new_Triangulation.built_polytope_flag == false && new_Triangulation.number_vertices <= 14){
+			new_Triangulation.printf("Non_Realizable");
+			//new_Triangulation.print();
 		}
 	}
 }
@@ -490,7 +500,7 @@ void read_plantri_triangulation(string input_file_name){
 //	3:0 0 0 1 0 0 1
 //In clockwise order, and with #vertices as the start of the line, the number of interior points on the other side of the colon
 //This function reads the polygons and puts them into standard form, as well as recording rotated and mirrored embeddings
-void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
+void read_polygon_DB(string input_file_name="Smooth_Polygon_DB_test.txt"){
 	cout << "Reading Smooth Polygon Database from " << input_file_name << "..." << endl;
 	ifstream fin(input_file_name);
 	int number_vertices;
@@ -507,7 +517,7 @@ void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
 		assert(colon == ':');
 
 
-		//Reading t he coordinates
+		//Reading the coordinates and traslating so that (0, 0) is the first point
 		vector<vector<int>> vertex_coordinates;
 		int translation_x, translation_y;
 		vertex_coordinates.push_back({0,0});
@@ -534,7 +544,7 @@ void read_polygon_DB(string input_file_name="Smooth_Polygon_DB.txt"){
 		vector<int> edge_lengths_reverse = edge_lengths;
 		reverse(edge_lengths_reverse.begin(), edge_lengths_reverse.end());
 		reverse(vertex_coordinates_reverse.begin()+1, vertex_coordinates_reverse.end());
-		Smooth_Polygon new_Polygon_reverse = Smooth_Polygon(number_vertices, 0, edge_lengths_reverse, vertex_coordinates_reverse);
+		Smooth_Polygon new_Polygon_reverse = Smooth_Polygon(number_vertices, num_interior_lattice_points, edge_lengths_reverse, vertex_coordinates_reverse);
 		Smooth_Polygon_DB[new_Polygon_reverse.edge_lengths].insert(new_Polygon_reverse);
 		//Now rotate its embeddings
 		for(int i = 1; i < number_vertices; i++){
@@ -576,24 +586,24 @@ int main(){
 
 	auto start_time = std::chrono::high_resolution_clock::now(); 	//Run-time Analytrics
 
-	cubeexample();
-	/*
+	//cubeexample();
+	
 	#pragma omp parallel for //Parallelization
 	for(int triangulation_number_vertices = MIN_PLANTRI_OUTPUT; triangulation_number_vertices <= MAX_PLANTRI_OUTPUT; triangulation_number_vertices++){
 		string input_plantri_file = "plantri_output";
 		input_plantri_file += to_string(triangulation_number_vertices);
 		read_plantri_triangulation(input_plantri_file); 
 	}
-	*/
+	
 
 	
-	//===============Outputting various analytics========================
+	//===============Outputting various analytics========================//
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::duration<double>>(end_time - start_time);
-	cout << "Time taken: " << duration.count() << "\n";
-	cout << "Time taken on affine transformations: " << affine_transformation_time << " seconds" << "\n";
-	cout << "Time taken on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << "\n";
-	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << "\n";
+	cout << "Total time spent: Around " << duration.count() / 3600 << " hours \n";
+	cout << "Time spent on affine transformations: " << affine_transformation_time << " seconds" << "\n";
+	cout << "Time spent on checking dictionary mergability: " << dictionary_merge_check_time << " seconds" << "\n";
+	cout << "Time spent on edge length allocations: " << edge_length_allocation_time << " seconds" << "\n";
 	cout << triangulations << " processed" << "\n";
 	cout << polytopes_produced << " smooth 3-polytopes were produced" << "\n";
 	cout << affine_transformations_done << " affine transformations" << "\n";

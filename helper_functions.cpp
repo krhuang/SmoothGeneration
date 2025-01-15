@@ -130,6 +130,7 @@ vector<vector<int>> flip_x_y_coordinates(const vector<vector<int>>& vertex_coord
 //It should take the format
 //First number is the #vertices
 //Each row thereafter is a vertex in Z^3
+//---Example---
 // 6
 // 0 0 0
 // 1 0 0 
@@ -151,7 +152,7 @@ void print_polytope(int number_vertices, map<set<int>, vector<int>> vertex_dicti
         }
         output_file << "\n";
     }
-    //output_file.close();
+    output_file.close();
 }
 
 //A helper function for balls_and_boxes
