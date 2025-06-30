@@ -1,15 +1,17 @@
 #include <iostream>
-#include <fstream>	//file input and output handling
+#include <fstream>	// File input and output handling
+//	Data structures packages--
 #include <set>
 #include <vector>
 #include <time.h>
 #include <numeric>
 #include <algorithm>
 #include <map>
-#include <chrono>	//time analytics
-#include <cassert> 	//assert statements
-#include <omp.h>	//parallelization with OpenMP
-#include "helper_functions.h" //Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
+//----------------------------
+#include <chrono>	// Time analytics
+#include <cassert> 	// Assert statements
+#include <omp.h>	// Parallelization with OpenMP
+#include "helper_functions.h" // Some name-wise self-explanatory functions, for printing, subtracting, multiplying, adding, matrices and vectors and dictionaries
 using namespace std;
 
 //The maximum # of lattice points in the 3-polytopes we generate. Previous work of Lundman has gone up to 16
@@ -39,17 +41,17 @@ public:
 	vector<int> edge_lengths{  }; 					//Edge lengths are given clockwise from the 0 0 vertex and in lattice-length format. 
 	vector<vector<int>> vertex_coordinates{}; 		//Vertex coordinates, in clockwise order
 
-	//Constructor
+	// Constructor
 	Smooth_Polygon(int init_number_vertices, int init_number_interior_lattice_points, vector<int> init_edge_lengths, vector<vector<int>> init_coordinates)
 		: number_vertices(init_number_vertices), number_interior_lattice_points(init_number_interior_lattice_points), edge_lengths(init_edge_lengths), vertex_coordinates(init_coordinates)
 	{}
 
-	//Comparison operator so we can have ordered sets of Smooth Polygons
+	// Comparison operator so we can have ordered sets of Smooth Polygons
 	bool operator<(const Smooth_Polygon& other) const {
 		return vertex_coordinates < other.vertex_coordinates;
 	}
 
-	//Print function
+	// Print function
 	void print(){
 		cout << "A Smooth Polygon with " << number_vertices << " vertices and " << number_interior_lattice_points << " interior lattice points." << "\n";
 		cout << "Its vertices are " << "\n";
@@ -65,8 +67,8 @@ public:
 		}
 	}
 
-	//Returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
-	//For embedding polygons in 3-space, as the facets of a polytope
+	// Returns the vertices of the smooth polygon as embedded according to assigning the origin to origin_destination, the (a, 0) vertex to x_destination, and the (0, b) vertex to the y_destination
+	// For embedding polygons in 3-space, as the facets of a polytope
 	vector<vector<int>> Affine_Transf(vector<int> origin_destination, vector<int> x_destination, vector<int> y_destination) const {
 		affine_transformations_done++; //Runtime analytics
 		auto start_time = std::chrono::high_resolution_clock::now(); //Runtime analytics
