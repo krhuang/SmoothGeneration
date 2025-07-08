@@ -15,6 +15,20 @@
 
 <p>All that remains is to run SmoothGeneration, and then prune the list for isomorphic copies and polytopes with too many lattice points, via the included Pruning Jupyter Notebook.</p>
 
+<p>You can get started via the following commands:</p>
+
+```
+
+git clone https://github.com/krhuang/SmoothGeneration.git
+
+```
+
+```
+
+g++ -O3 -std=c++17 -Wall -fopenmp -I. SmoothGeneration.cpp helper_functions.cpp -o SmoothGeneration && ./SmoothGeneration
+
+```
+
 <p>If you wish to rerun the computation with smaller or larger numbers you will have to take care to increase the database of smooth polygons, have the needed plantri files, and modify various global variables in the programs.</p>
 
 <p>If you plan to redo the computation with larger numbers please message me! I likely am either in the process of doing so myself or at least have many ideas for computational optimizations for you.</p>
