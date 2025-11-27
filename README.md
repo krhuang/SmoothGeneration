@@ -17,7 +17,7 @@
 ```
 
 <h3>Tables</h3>
-The distribution of various properties (obtained via running <code>julia postprocess.jl</code> is shown below: 
+The distribution of various properties (obtained via running <code>julia postprocess.jl</code>) is shown below: 
 <pre>
 Distribution of Number of Vertices
 -------------------------------------
